@@ -9,15 +9,16 @@
 3. **动态规划** — 基于词频取对数作为权重，从右向左计算最大概率路径
 4. **分词输出** — 沿最优路径切分句子；未登录字按单个 UTF-8 字符回退
 
-## 构建
+## 构建 C++ 命令行工具
 
 ```bash
-make
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 ```
 
 ## 使用
 
-### 交互模式
+### 命令行交互模式
 
 准备一个词典文件，每行格式为 `词\t词频`，例如：
 
@@ -31,7 +32,7 @@ make
 启动交互式分词：
 
 ```bash
-./cut dict.txt
+./build/ismacut dict.txt
 ```
 
 ```
@@ -39,21 +40,41 @@ make
 南京市/长江大桥
 ```
 
-### 运行测试
-
 不带参数运行即可执行内置测试：
 
 ```bash
-./cut
+./build/ismacut
+```
+
+### Python
+
+安装：
+
+```bash
+uv pip install .
+```
+
+使用：
+
+```python
+import ismacut
+
+cutter = ismacut.Cutter("dict.txt")
+result = cutter.cut("南京市长江大桥")
+print(result)  # ['南京市', '长江大桥']
 ```
 
 ## 项目结构
 
 ```
-trie.h   - Double-Array Trie 实现（构建、精确查找、前缀搜索）
-cut.h    - 分词器声明及词频权重计算
-cut.cc   - DAG 构建、动态规划求解、分词主逻辑
-main.cc  - 词典加载、交互式 REPL、内置测试
+src/
+  trie.h       - Double-Array Trie 实现（构建、精确查找、前缀搜索）
+  cut.h        - 分词器声明及词频权重计算
+  cut.cc       - DAG 构建、动态规划求解、分词主逻辑
+  main.cc      - 词典加载、交互式 REPL、内置测试
+  pip.cc       - pybind11 Python 绑定
+python/
+  ismacut/     - Python 包入口
 ```
 
 ## License

@@ -1,6 +1,13 @@
 # Build outputs
-cut
+build/
 *.o
+ismacut
+
+# Python
+*.egg-info/
+dist/
+__pycache__/
+*.so
 
 # Dictionary (too large for git)
 dict.txt
