@@ -1,0 +1,6 @@
+# Build outputs
+cut
+*.o
+
+# Dictionary (too large for git)
+dict.txt
