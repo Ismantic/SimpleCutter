@@ -1,6 +1,6 @@
 # IsmaCut
 
-基于 Double-Array Trie 的中文分词工具。使用 DAG（有向无环图）+ 动态规划求解最大概率路径，实现高效的中文分词。
+基于 Double-Array Trie 的中文分词工具。使用 DAG（有向无环图）+ 动态规划求解最大概率路径。
 
 ## 原理
 
