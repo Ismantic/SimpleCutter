@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # CLI binary
-add_executable(ismacut src/main.cc src/cut.cc src/segment.cc src/count.cc)
+add_executable(ismacut src/main.cc src/cut.cc src/segment.cc src/count.cc src/ustr.cc)
 target_include_directories(ismacut PRIVATE src)
 
 # Python module (only when built via scikit-build / pip install)

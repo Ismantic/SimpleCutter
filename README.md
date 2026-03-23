@@ -106,9 +106,10 @@ print(result)  # ['南京市', '长江大桥']
 ```
 src/
   trie.h       - Double-Array Trie（构建、查找、前缀搜索）
+  ustr.h/cc    - UTF-8 工具（字符长度、合法性校验）
   cut.h/cc     - DAG+DP 分词器
   segment.h/cc - 正向最长匹配分词（冷启动用）
-  count.h/cc   - 词频统计（带 UTF-8 校验）
+  count.h/cc   - 词频统计
   main.cc      - CLI 入口（REPL / pipe / segment / count）
   pip.cc       - pybind11 Python 绑定
 scripts/

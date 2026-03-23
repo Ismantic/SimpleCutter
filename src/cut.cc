@@ -1,23 +1,16 @@
 #include "cut.h"
+#include "ustr.h"
 
 #include <limits>
 
 namespace cut {
-
-static int Utf8CharLen(uint8_t c) {
-    if ((c & 0x80) == 0) return 1;
-    if ((c & 0xE0) == 0xC0) return 2;
-    if ((c & 0xF0) == 0xE0) return 3;
-    if ((c & 0xF8) == 0xF0) return 4;
-    return 1;
-}
 
 std::vector<std::set<int>> NaiveCutter::DAG(const std::string& sentence) {
     int n = sentence.length();
     std::vector<std::set<int>> G(n);
 
     for (int i = 0; i < n; ) {
-        int charlen = Utf8CharLen(static_cast<uint8_t>(sentence[i]));
+        int charlen = ustr::CharLen(static_cast<uint8_t>(sentence[i]));
 
         auto rs = da_.PrefixSearch(sentence.substr(i));
         for (auto& r : rs) {
@@ -78,7 +71,7 @@ std::vector<std::string> NaiveCutter::Cut(const std::string& sentence) {
         int y = R[x].second + 1;
         if (y <= x) {
             // no match, output single utf-8 char and move forward
-            int len = Utf8CharLen(static_cast<uint8_t>(sentence[x]));
+            int len = ustr::CharLen(static_cast<uint8_t>(sentence[x]));
             rs.push_back(sentence.substr(x, len));
             x += len;
         } else {
