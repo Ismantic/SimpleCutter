@@ -1,7 +1,7 @@
 # Build outputs
 build/
 *.o
-ismacut
+/ismacut
 
 # Python
 *.egg-info/
