@@ -26,11 +26,12 @@ cmake --build build
 
 ```bash
 ./build/ismacut dict/dict.txt
+./build/ismacut --dict dict/dict.txt
 ```
 
 ```
 > 南京市长江大桥
-南京市/长江大桥
+南京市/长江/大桥
 ```
 
 ### Pipe 模式

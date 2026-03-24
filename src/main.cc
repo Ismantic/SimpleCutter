@@ -289,6 +289,7 @@ void count_mode(const std::string& dict_file,
 int main(int argc, char* argv[]) {
     // ismacut --dict dict.file --segment input.file output.file
     // ismacut --count output.file count.file
+    // ismacut --dict dict.file (repl)
     // ismacut dict.file --pipe
     // ismacut dict.file  (repl)
     // ismacut  (tests)
@@ -333,6 +334,8 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         pipe_mode(df);
+    } else if (!dict_file.empty() && args.empty()) {
+        repl(dict_file);
     } else if (!args.empty()) {
         repl(args[0]);
     } else {
