@@ -9,5 +9,5 @@ dist/
 __pycache__/
 *.so
 
-# Dictionary (too large for git)
-dict.txt
+# Dictionary (root level, user-provided)
+/dict.txt

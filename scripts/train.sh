@@ -22,7 +22,7 @@ for i in $(seq 0 $((ROUNDS - 1))); do
 
     if [ "$i" -gt 0 ]; then
         prev=$((i - 1))
-        changed=$(diff "$OUT/seg_r${prev}.txt" "$OUT/seg_r${i}.txt" | grep -c '^[<>]' || true)
+        changed=$(paste "$OUT/seg_r${prev}.txt" "$OUT/seg_r${i}.txt" | awk -F'\t' '$1 != $2 { n++ } END { print n+0 }')
         echo "Changed lines: $changed"
         rm -f "$OUT/seg_r${prev}.txt"
     fi
