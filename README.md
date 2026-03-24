@@ -8,7 +8,6 @@
 - **EM 词频自举** — 给定词典和生语料，无需标注数据即可学出词频
 - **冷启动分词** — 正向最长匹配，用于 EM 的初始化
 - **Double-Array Trie** — XOR 索引，支持精确查找和公共前缀搜索
-- **内置词典** — 274,507 词条，基于维基百科、人民日报、THUCNews 语料训练
 - **纯 C++17** — 无外部依赖，< 1000 行
 
 ## 构建
@@ -86,7 +85,7 @@ import ismacut
 
 cutter = ismacut.Cutter("dict/dict.txt")
 result = cutter.cut("南京市长江大桥")
-print(result)  # ['南京市', '长江大桥']
+print(result)  # ['南京市', '长江', '大桥']
 ```
 
 ### 内置测试
