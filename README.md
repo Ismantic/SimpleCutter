@@ -1,4 +1,4 @@
-# IsmaCut
+# IsmaCut 是语切词器
 
 基于 Double-Array Trie 的中文分词工具。支持 DAG+DP 分词和基于 EM 迭代的无监督词频学习。
 
