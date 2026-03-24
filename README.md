@@ -8,6 +8,7 @@
 - **EM 词频自举** — 给定词典和生语料，无需标注数据即可学出词频
 - **冷启动分词** — 正向最长匹配，用于 EM 的初始化
 - **Double-Array Trie** — XOR 索引，支持精确查找和公共前缀搜索
+- **内置词典** — 274,507 词条，基于维基百科、人民日报、THUCNews 语料训练
 - **纯 C++17** — 无外部依赖，< 1000 行
 
 ## 构建
@@ -21,10 +22,10 @@ cmake --build build
 
 ### 交互模式
 
-准备词频词典（`词\t词频`），启动 REPL：
+使用内置词典启动 REPL：
 
 ```bash
-./build/ismacut dict.txt
+./build/ismacut dict/dict.txt
 ```
 
 ```
@@ -37,7 +38,15 @@ cmake --build build
 从 stdin 逐行读入，分词后输出到 stdout（空格分隔）：
 
 ```bash
-./build/ismacut --dict dict.txt --pipe < input.txt > output.txt
+./build/ismacut --dict dict/dict.txt --pipe < input.txt > output.txt
+```
+
+### Cut 模式
+
+从文件读入，DP 分词后写入文件：
+
+```bash
+./build/ismacut --dict dict/dict.txt --cut input.txt output.txt
 ```
 
 ### 冷启动分词（最长匹配）
@@ -62,29 +71,7 @@ cmake --build build
 给定词典和生语料，通过冷启动 → 统计 → DP 分词 → 统计的迭代学出词频：
 
 ```bash
-# 冷启动
-ismacut --dict words.txt --segment corpus.txt output/seg_cold.txt
-ismacut --dict words.txt --count output/seg_cold.txt output/freq_cold.txt
-
-# EM 迭代（3-5 轮即可收敛）
-ismacut --dict output/freq_cold.txt --pipe < corpus.txt > output/seg_r0.txt
-ismacut --dict words.txt --count output/seg_r0.txt output/freq_r0.txt
-
-ismacut --dict output/freq_r0.txt --pipe < corpus.txt > output/seg_r1.txt
-ismacut --dict words.txt --count output/seg_r1.txt output/freq_r1.txt
-# ...
-```
-
-也可以直接用训练脚本：
-
-```bash
 scripts/train.sh words.txt corpus.txt 5
-```
-
-### 内置测试
-
-```bash
-./build/ismacut
 ```
 
 ### Python
@@ -96,21 +83,29 @@ uv pip install .
 ```python
 import ismacut
 
-cutter = ismacut.Cutter("dict.txt")
+cutter = ismacut.Cutter("dict/dict.txt")
 result = cutter.cut("南京市长江大桥")
 print(result)  # ['南京市', '长江大桥']
+```
+
+### 内置测试
+
+```bash
+./build/ismacut
 ```
 
 ## 项目结构
 
 ```
+dict/
+  dict.txt     - 内置词频词典（词\t频次，274,507 词条）
 src/
   trie.h       - Double-Array Trie（构建、查找、前缀搜索）
   ustr.h/cc    - UTF-8 工具（字符长度、合法性校验）
   cut.h/cc     - DAG+DP 分词器
   segment.h/cc - 正向最长匹配分词（冷启动用）
   count.h/cc   - 词频统计
-  main.cc      - CLI 入口（REPL / pipe / segment / count）
+  main.cc      - CLI 入口（REPL / pipe / cut / segment / count）
   pip.cc       - pybind11 Python 绑定
 scripts/
   train.sh     - EM 词频学习脚本
