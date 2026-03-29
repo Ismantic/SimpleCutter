@@ -1,4 +1,4 @@
-# SimpleCutter 
+# Iscut (Is Semantic Cutter) 是语切词
 
 想办法构建一个词表，找一大批中文语料，就能构建一个还不错的分词器。
 基于 Double-Array Trie 的中文分词工具。支持 DAG+DP 分词和基于 EM 迭代的无监督词频学习。
