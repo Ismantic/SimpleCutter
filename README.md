@@ -75,6 +75,27 @@ cmake --build build
 scripts/train.sh words.txt corpus.txt 5
 ```
 
+### 构建原始词表
+
+仓库内置了一套词表构建脚本，用来从 `chinese-xinhua` 和中文维基词源生成原始候选词表：
+
+```bash
+./build/count_chars corpus_all.txt dict/generated/char_freq.txt
+python3 dict/build_lexicon.py --char-freq-input dict/generated/char_freq.txt
+```
+
+默认产物：
+
+- `dict/generated/char_freq.txt`：从语料统计得到的字频
+- `dict/generated/iscut_dict_raw.txt`：按规则过滤后的原始候选词表
+
+当前词表规则：
+
+- 1/2/3 字词保留
+- 4 字词仅保留成语
+- 5 字及以上丢弃
+- 词中每个字都必须在语料中至少出现 2 次
+
 ### Python
 
 ```bash
@@ -99,7 +120,10 @@ print(result)  # ['南京市', '长江', '大桥']
 
 ```
 dict/
-  dict.txt     - 内置词频词典（词\t频次，274,506 词条）
+  dict.txt     - 当前默认词频词典（词\t频次）
+  build_lexicon.py - 从新华词典 + 中文维基构建原始候选词表
+  count_chars.cc   - 从大语料统计字频
+  generated/       - 词表构建中间产物与候选词表
 src/
   trie.h       - Double-Array Trie（构建、查找、前缀搜索）
   ustr.h/cc    - UTF-8 工具（字符长度、合法性校验）

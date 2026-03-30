@@ -9,5 +9,17 @@ dist/
 __pycache__/
 *.so
 
+# Training outputs / local research data
+output/
+paper/
+dict/__pycache__/
+dict/generated/char_freq_small.txt
+dict/generated/seed_lexicon.small.txt
+dict/generated/seed_lexicon.txt
+corpus_*.txt
+cut
+dict-main.txt
+sime_dict.v0.txt
+
 # Dictionary (root level, user-provided)
 /dict.txt
