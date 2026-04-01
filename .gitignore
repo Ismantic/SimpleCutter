@@ -13,9 +13,11 @@ __pycache__/
 output/
 paper/
 dict/__pycache__/
-dict/generated/char_freq_small.txt
-dict/generated/seed_lexicon.small.txt
-dict/generated/seed_lexicon.txt
+dict/generated/
+dict/build_lexicon.py
+dict/count_chars.cc
+dict/fetch_wiki.py
+dict/README.md
 corpus_*.txt
 cut
 dict-main.txt
