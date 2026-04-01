@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-DICT=${1:?usage: train.sh <dict_file> <corpus_file> [rounds=5]}
-CORPUS=${2:?usage: train.sh <dict_file> <corpus_file> [rounds=5]}
+DICT=${1:?usage: run_em.sh <dict_file> <corpus_file> [rounds=5]}
+CORPUS=${2:?usage: run_em.sh <dict_file> <corpus_file> [rounds=5]}
 ROUNDS=${3:-5}
 
 ISCUT="$(dirname "$0")/../build/iscut"

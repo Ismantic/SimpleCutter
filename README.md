@@ -71,7 +71,7 @@ cmake --build build
 给定词典和生语料，通过冷启动 → 统计 → DP 分词 → 统计的迭代学出词频：
 
 ```bash
-scripts/train.sh words.txt corpus.txt 5
+scripts/run_em.sh words.txt corpus.txt 5
 ```
 
 ### 构建原始词表
@@ -132,7 +132,7 @@ src/
   main.cc      - CLI 入口（REPL / pipe / cut / segment / count）
   pip.cc       - pybind11 Python 绑定
 scripts/
-  train.sh     - EM 词频学习脚本
+  run_em.sh    - EM 词频学习脚本
 python/
   iscut/     - Python 包入口
 ```
