@@ -15,7 +15,6 @@ paper/
 dict/__pycache__/
 dict/generated/
 dict/build_lexicon.py
-dict/count_chars.cc
 dict/fetch_wiki.py
 dict/README.md
 corpus_*.txt
