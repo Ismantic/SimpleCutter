@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build an IsmaCut seed lexicon from Xinhua and Chinese Wikipedia sources."""
+"""Build an Iscut seed lexicon from Xinhua and Chinese Wikipedia sources."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ DROP_SUBSTRINGS = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build a seed lexicon for IsmaCut from curated Chinese sources."
+        description="Build a seed lexicon for Iscut from curated Chinese sources."
     )
     parser.add_argument(
         "--xinhua-dir",

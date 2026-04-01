@@ -40,8 +40,8 @@ private:
     cut::NaiveCutter cutter_;
 };
 
-PYBIND11_MODULE(_ismacut, m) {
-    m.doc() = "IsmaCut: Chinese word segmentation based on Double-Array Trie";
+PYBIND11_MODULE(_iscut, m) {
+    m.doc() = "Iscut: Chinese word segmentation based on Double-Array Trie";
 
     py::class_<PyCutter>(m, "Cutter")
         .def(py::init<const std::string&>(), py::arg("dict_path"))

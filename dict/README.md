@@ -1,6 +1,6 @@
 # Dictionary Build
 
-This directory contains lexicon-building utilities for `IsmaCut`.
+This directory contains lexicon-building utilities for `Iscut`.
 
 ## Seed Lexicon
 
@@ -19,7 +19,7 @@ The filtering rules are intentionally strict:
 - 5+ character words: drop
 - Every character in every kept word must appear in `corpus_all.txt` at least `2` times by default
 
-The script writes a plain word list, one word per line. Frequency learning is handled later by the existing `IsmaCut` training flow.
+The script writes a plain word list, one word per line. Frequency learning is handled later by the existing `Iscut` training flow.
 
 ## Usage
 

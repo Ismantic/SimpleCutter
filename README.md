@@ -24,8 +24,8 @@ cmake --build build
 使用内置词典启动 REPL：
 
 ```bash
-./build/ismacut dict/dict.txt
-./build/ismacut --dict dict/dict.txt
+./build/iscut dict/dict.txt
+./build/iscut --dict dict/dict.txt
 ```
 
 ```
@@ -38,7 +38,7 @@ cmake --build build
 从 stdin 逐行读入，分词后输出到 stdout（空格分隔）：
 
 ```bash
-./build/ismacut --dict dict/dict.txt --pipe < input.txt > output.txt
+./build/iscut --dict dict/dict.txt --pipe < input.txt > output.txt
 ```
 
 ### Cut 模式
@@ -46,7 +46,7 @@ cmake --build build
 从文件读入，DP 分词后写入文件：
 
 ```bash
-./build/ismacut --dict dict/dict.txt --cut input.txt output.txt
+./build/iscut --dict dict/dict.txt --cut input.txt output.txt
 ```
 
 ### 冷启动分词（最长匹配）
@@ -54,7 +54,7 @@ cmake --build build
 用词典做正向最长匹配，无需词频：
 
 ```bash
-./build/ismacut --dict words.txt --segment input.txt output.txt
+./build/iscut --dict words.txt --segment input.txt output.txt
 ```
 
 ### 词频统计
@@ -62,8 +62,8 @@ cmake --build build
 统计分词结果中的词频，可用 `--dict` 过滤只保留词典内的词：
 
 ```bash
-./build/ismacut --count input.txt freq.txt
-./build/ismacut --dict words.txt --count input.txt freq.txt
+./build/iscut --count input.txt freq.txt
+./build/iscut --dict words.txt --count input.txt freq.txt
 ```
 
 ### EM 词频学习
@@ -102,9 +102,9 @@ uv pip install .
 ```
 
 ```python
-import ismacut
+import iscut
 
-cutter = ismacut.Cutter("dict/dict.txt")
+cutter = iscut.Cutter("dict/dict.txt")
 result = cutter.cut("南京市长江大桥")
 print(result)  # ['南京市', '长江', '大桥']
 ```
@@ -112,7 +112,7 @@ print(result)  # ['南京市', '长江', '大桥']
 ### 内置测试
 
 ```bash
-./build/ismacut
+./build/iscut
 ```
 
 ## 项目结构
@@ -134,7 +134,7 @@ src/
 scripts/
   train.sh     - EM 词频学习脚本
 python/
-  ismacut/     - Python 包入口
+  iscut/     - Python 包入口
 ```
 
 ## License

@@ -287,12 +287,12 @@ void count_mode(const std::string& dict_file,
 }
 
 int main(int argc, char* argv[]) {
-    // ismacut --dict dict.file --segment input.file output.file
-    // ismacut --count output.file count.file
-    // ismacut --dict dict.file (repl)
-    // ismacut dict.file --pipe
-    // ismacut dict.file  (repl)
-    // ismacut  (tests)
+    // iscut --dict dict.file --segment input.file output.file
+    // iscut --count output.file count.file
+    // iscut --dict dict.file (repl)
+    // iscut dict.file --pipe
+    // iscut dict.file  (repl)
+    // iscut  (tests)
 
     std::string mode;
     std::string dict_file;
@@ -311,26 +311,26 @@ int main(int argc, char* argv[]) {
 
     if (mode == "--segment") {
         if (dict_file.empty() || args.size() != 2) {
-            std::cerr << "usage: ismacut --dict dict.file --segment input.file output.file" << std::endl;
+            std::cerr << "usage: iscut --dict dict.file --segment input.file output.file" << std::endl;
             return 1;
         }
         segment_mode(dict_file, args[0], args[1]);
     } else if (mode == "--cut") {
         if (dict_file.empty() || args.size() != 2) {
-            std::cerr << "usage: ismacut --dict dict.file --cut input.file output.file" << std::endl;
+            std::cerr << "usage: iscut --dict dict.file --cut input.file output.file" << std::endl;
             return 1;
         }
         cut_mode(dict_file, args[0], args[1]);
     } else if (mode == "--count") {
         if (args.size() != 2) {
-            std::cerr << "usage: ismacut [--dict dict.file] --count input.file output.file" << std::endl;
+            std::cerr << "usage: iscut [--dict dict.file] --count input.file output.file" << std::endl;
             return 1;
         }
         count_mode(dict_file, args[0], args[1]);
     } else if (mode == "--pipe") {
         std::string df = dict_file.empty() && args.size() == 1 ? args[0] : dict_file;
         if (df.empty()) {
-            std::cerr << "usage: ismacut --dict dict.file --pipe" << std::endl;
+            std::cerr << "usage: iscut --dict dict.file --pipe" << std::endl;
             return 1;
         }
         pipe_mode(df);
