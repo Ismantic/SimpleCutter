@@ -1,13 +1,20 @@
 #include <algorithm>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "ustr.h"
-
 namespace {
+
+int CharLen(uint8_t c) {
+    if ((c & 0x80) == 0) return 1;
+    if ((c & 0xE0) == 0xC0) return 2;
+    if ((c & 0xF0) == 0xE0) return 3;
+    if ((c & 0xF8) == 0xF0) return 4;
+    return 1;
+}
 
 bool IsChineseChar(const std::string& s) {
     if (s == "〇") return true;
@@ -57,7 +64,7 @@ int main(int argc, char* argv[]) {
     std::string line;
     while (std::getline(in, line)) {
         for (size_t i = 0; i < line.size();) {
-            int len = ustr::CharLen(static_cast<uint8_t>(line[i]));
+            int len = CharLen(static_cast<uint8_t>(line[i]));
             if (i + len > line.size()) len = 1;
             std::string ch = line.substr(i, len);
             if (IsChineseChar(ch)) {
