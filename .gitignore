@@ -11,9 +11,7 @@ __pycache__/
 
 # Training outputs / local research data
 output/
-paper/*.aux
-paper/*.log
-paper/*.out
+paper/
 corpus_*.txt
 cut
 dict-main.txt
