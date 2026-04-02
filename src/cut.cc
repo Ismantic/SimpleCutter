@@ -59,7 +59,7 @@ std::vector<float_i> NaiveCutter::Compute(const std::string& sentence,
     return route;
 }
 
-std::vector<std::string> NaiveCutter::Cut(const std::string& sentence) {
+std::vector<std::string> NaiveCutter::CutSegment(const std::string& sentence) {
     std::vector<std::set<int>> G = DAG(sentence);
     std::vector<float_i> R = Compute(sentence, G);
 
@@ -70,13 +70,28 @@ std::vector<std::string> NaiveCutter::Cut(const std::string& sentence) {
     while (x < n) {
         int y = R[x].second + 1;
         if (y <= x) {
-            // no match, output single utf-8 char and move forward
             int len = ustr::CharLen(static_cast<uint8_t>(sentence[x]));
             rs.push_back(sentence.substr(x, len));
             x += len;
         } else {
             rs.push_back(sentence.substr(x, y - x));
             x = y;
+        }
+    }
+
+    return rs;
+}
+
+std::vector<std::string> NaiveCutter::Cut(const std::string& sentence) {
+    auto segments = ustr::SplitByPunct(sentence);
+    std::vector<std::string> rs;
+
+    for (auto& [seg, is_punct] : segments) {
+        if (is_punct) {
+            rs.push_back(seg);
+        } else {
+            auto words = CutSegment(seg);
+            rs.insert(rs.end(), words.begin(), words.end());
         }
     }
 
