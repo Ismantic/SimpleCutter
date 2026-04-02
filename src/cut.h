@@ -61,6 +61,7 @@ public:
     std::vector<float_i> Compute(const std::string& sentence,
                                  const std::vector<std::set<int>>& G);
 
+    std::vector<std::string> CutSegment(const std::string& sentence);
     std::vector<std::string> Cut(const std::string& sentence);
 };
 

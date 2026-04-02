@@ -1,33 +1,31 @@
 #!/bin/bash
 set -euo pipefail
 
-DICT=${1:?usage: run_em.sh <dict_file> <corpus_file> [rounds=5]}
-CORPUS=${2:?usage: run_em.sh <dict_file> <corpus_file> [rounds=5]}
-ROUNDS=${3:-5}
+DICT=${1:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> [rounds=5]}
+CORPUS=${2:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> [rounds=5]}
+OUT=${3:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> [rounds=5]}
+ROUNDS=${4:-5}
 
 ISCUT="$(dirname "$0")/../build/iscut"
-OUT="$(dirname "$0")/../output"
 mkdir -p "$OUT"
 
-echo "=== Cold start: longest match ==="
-"$ISCUT" --dict "$DICT" --segment "$CORPUS" "$OUT/seg_cold.txt"
-"$ISCUT" --dict "$DICT" --count "$OUT/seg_cold.txt" "$OUT/freq_cold.txt"
-rm -f "$OUT/seg_cold.txt"
+# Cold start: longest match → data.cut.0 → dict.1
+echo "=== Cold start ==="
+"$ISCUT" --dict "$DICT" --segment "$CORPUS" "$OUT/data.cut.0"
+"$ISCUT" --dict "$DICT" --count "$OUT/data.cut.0" "$OUT/dict.1"
 
-prev_freq="$OUT/freq_cold.txt"
-for i in $(seq 0 $((ROUNDS - 1))); do
+# EM rounds: dict.i → data.cut.i → dict.(i+1)
+for i in $(seq 1 $((ROUNDS - 1))); do
     echo "=== Round $i ==="
-    "$ISCUT" --dict "$prev_freq" --cut "$CORPUS" "$OUT/seg_r${i}.txt"
-    "$ISCUT" --dict "$DICT" --count "$OUT/seg_r${i}.txt" "$OUT/freq_r${i}.txt"
+    "$ISCUT" --dict "$OUT/dict.${i}" --cut "$CORPUS" "$OUT/data.cut.${i}"
+    "$ISCUT" --dict "$DICT" --count "$OUT/data.cut.${i}" "$OUT/dict.$((i + 1))"
 
-    if [ "$i" -gt 0 ]; then
+    if [ "$i" -gt 1 ]; then
         prev=$((i - 1))
-        changed=$(paste "$OUT/seg_r${prev}.txt" "$OUT/seg_r${i}.txt" | awk -F'\t' '$1 != $2 { n++ } END { print n+0 }')
+        changed=$(paste "$OUT/data.cut.${prev}" "$OUT/data.cut.${i}" | awk -F'\t' '$1 != $2 { n++ } END { print n+0 }')
         echo "Changed lines: $changed"
-        rm -f "$OUT/seg_r${prev}.txt"
+        rm -f "$OUT/data.cut.${prev}"
     fi
-
-    prev_freq="$OUT/freq_r${i}.txt"
 done
 
-echo "=== Done. Final freq: $prev_freq ==="
+echo "=== Done. Final: $OUT/dict.${ROUNDS} ==="
