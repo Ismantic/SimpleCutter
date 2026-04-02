@@ -1,4 +1,4 @@
-ROUNDS = 5
+ROUNDS = 8
 CORPUS = ../data/data.txt
 DICT_RAW = ../conv/dict.raw
 ISCUT = ../build/iscut

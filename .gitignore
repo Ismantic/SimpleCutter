@@ -11,7 +11,9 @@ __pycache__/
 
 # Training outputs / local research data
 output/
-paper/
+paper/*.aux
+paper/*.log
+paper/*.out
 dict/__pycache__/
 dict/generated/
 dict/build_lexicon.py

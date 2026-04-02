@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-DICT=${1:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> [rounds=5]}
-CORPUS=${2:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> [rounds=5]}
-OUT=${3:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> [rounds=5]}
-ROUNDS=${4:-5}
+DICT=${1:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> [rounds=8]}
+CORPUS=${2:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> [rounds=8]}
+OUT=${3:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> [rounds=8]}
+ROUNDS=${4:-8}
 
 ISCUT="$(dirname "$0")/../build/iscut"
 mkdir -p "$OUT"
