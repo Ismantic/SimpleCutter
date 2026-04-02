@@ -20,10 +20,12 @@ dict.0: chars.cnt $(DICT_RAW)
 	python3 filter_dict.py chars.cnt $(DICT_RAW) $@
 
 # Step 3: EM training
+em: $(OUT)/dict.$(ROUNDS)
 $(OUT)/dict.$(ROUNDS): dict.0 $(CORPUS) $(ISCUT)
 	./run_em.sh dict.0 $(CORPUS) $(OUT) $(ROUNDS)
 
-# Step 4: final dict
+# Step 4: replace dict
+replace: ../dict/dict.txt
 ../dict/dict.txt: $(OUT)/dict.$(ROUNDS)
 	cp $< $@
 	@echo "=== Installed dict/dict.txt ==="
@@ -31,4 +33,4 @@ $(OUT)/dict.$(ROUNDS): dict.0 $(CORPUS) $(ISCUT)
 clean:
 	rm -rf $(OUT) chars.cnt dict.0
 
-.PHONY: all count_chars clean
+.PHONY: all count_chars em replace clean
