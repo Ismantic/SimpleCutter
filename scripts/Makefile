@@ -1,10 +1,10 @@
 ROUNDS = 8
 CORPUS = ../data/data.txt
-DICT_RAW = ../conv/dict.raw
+DICT_RAW = ../dict/dict.raw
 ISCUT = ../build/iscut
 OUT = output
 
-all: ../dict/dict.txt
+all: ../dict.txt
 
 # Step 1: count character frequencies
 count_chars: $(OUT)/count_chars
@@ -25,10 +25,10 @@ $(OUT)/dict.$(ROUNDS): dict.0 $(CORPUS) $(ISCUT)
 	./run_em.sh dict.0 $(CORPUS) $(OUT) $(ROUNDS)
 
 # Step 4: replace dict
-replace: ../dict/dict.txt
-../dict/dict.txt: $(OUT)/dict.$(ROUNDS)
+replace: ../dict.txt
+../dict.txt: $(OUT)/dict.$(ROUNDS)
 	cp $< $@
-	@echo "=== Installed dict/dict.txt ==="
+	@echo "=== Installed dict.txt ==="
 
 clean:
 	rm -rf $(OUT) chars.cnt dict.0

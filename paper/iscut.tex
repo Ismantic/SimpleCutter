@@ -48,7 +48,7 @@
 Iscut的完整流程分为四个阶段：
 
 \begin{enumerate}
-    \item \textbf{词表获取}（\texttt{conv/}）：从Wikimedia下载中文维基百科、维基词典、维基文库的标题数据和重定向数据，经繁简转换和规则过滤，生成候选词表。
+    \item \textbf{词表获取}（\texttt{dict/}）：从Wikimedia下载中文维基百科、维基词典、维基文库的标题数据和重定向数据，经繁简转换和规则过滤，生成候选词表。
     \item \textbf{语料获取}（\texttt{data/}）：从HuggingFace下载中文维基百科和维基新闻的文本数据，经繁简转换后合并为训练语料。
     \item \textbf{词频训练}（\texttt{scripts/}）：统计语料字频以过滤含稀有字的词，然后通过EM迭代学习词频分布。
     \item \textbf{分词}（\texttt{src/}）：基于学到的词频，用DAG+动态规划进行分词。
@@ -191,7 +191,7 @@ EM循环交替执行两步：
 整个训练流程通过Makefile自动化：
 
 \begin{verbatim}
-cd conv && make          # 获取并过滤维基词表
+cd dict && make          # 获取并过滤维基词表
 cd data && make          # 获取并处理语料
 cd scripts && make       # 字频过滤 + EM训练 + 替换词典
 \end{verbatim}

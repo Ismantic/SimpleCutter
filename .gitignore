@@ -14,15 +14,7 @@ output/
 paper/*.aux
 paper/*.log
 paper/*.out
-dict/__pycache__/
-dict/generated/
-dict/build_lexicon.py
-dict/fetch_wiki.py
-dict/README.md
 corpus_*.txt
 cut
 dict-main.txt
 sime_dict.v0.txt
-
-# Dictionary (root level, user-provided)
-/dict.txt

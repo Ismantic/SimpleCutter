@@ -24,7 +24,7 @@ cmake --build build
 ### 交互模式
 
 ```bash
-./build/iscut --dict dict/dict.txt
+./build/iscut --dict dict.txt
 ```
 
 ```
@@ -35,7 +35,7 @@ cmake --build build
 ### Pipe 模式
 
 ```bash
-./build/iscut --dict dict/dict.txt --pipe < input.txt > output.txt
+./build/iscut --dict dict.txt --pipe < input.txt > output.txt
 ```
 
 ### Python
@@ -47,7 +47,7 @@ uv pip install .
 ```python
 import iscut
 
-cutter = iscut.Cutter("dict/dict.txt")
+cutter = iscut.Cutter("dict.txt")
 result = cutter.cut("南京市长江大桥")
 print(result)  # ['南京市', '长江', '大桥']
 ```
@@ -61,7 +61,7 @@ print(result)  # ['南京市', '长江', '大桥']
 从中文维基百科、维基词典、维基文库、网络用语中提取候选词表：
 
 ```bash
-cd conv
+cd dict
 make download   # 下载 Wikimedia title dump 和 SQL dump
 make convert    # 繁简转换 + 过滤，生成 .raw 文件
 make filter     # 按规则过滤，生成 dict.raw
@@ -94,8 +94,8 @@ uv pip install datasets huggingface_hub[cli] opencc
 cd scripts
 make count_chars   # 统计语料字频 → chars.cnt
 make dict.0        # 用字频过滤词表 → dict.0
-make em            # EM 迭代训练 5 轮 → output/dict.5
-make replace       # 替换 dict/dict.txt
+make em            # EM 迭代训练 8 轮 → output/dict.8
+make replace       # 替换 dict.txt
 ```
 
 或者一步到位：
@@ -105,16 +105,16 @@ cd scripts
 make
 ```
 
-EM 流程：`dict.0` → 冷启动最长匹配 → `dict.1` → DP 分词 → `dict.2` → ... → `dict.5`
+EM 流程：`dict.0` → 冷启动最长匹配 → `dict.1` → DP 分词 → `dict.2` → ... → `dict.8`
 
 ## 项目结构
 
 ```
 src/           - C++ 分词器核心
-conv/          - 维基词表获取与转换
+dict/          - 维基词表获取与转换
 data/          - 语料下载与处理
 scripts/       - 训练流程（字频统计、词表过滤、EM）
-dict/dict.txt  - 当前默认词频词典
+dict.txt  - 当前默认词频词典
 ```
 
 ## License
