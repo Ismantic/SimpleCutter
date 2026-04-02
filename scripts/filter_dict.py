@@ -45,7 +45,14 @@ def main() -> None:
                 fout.write(word + "\n")
                 kept += 1
 
-    print(f"{kept}/{total} words kept (min_freq={args.min_freq})", file=sys.stderr)
+        # Add single chars with freq >= min_freq
+        added = 0
+        for ch, cnt in freq.items():
+            if cnt >= args.min_freq and len(ch) == 1 and '\u4e00' <= ch <= '\u9fff':
+                fout.write(ch + "\n")
+                added += 1
+
+    print(f"{kept}/{total} words kept, {added} single chars added (min_freq={args.min_freq})", file=sys.stderr)
 
 
 if __name__ == "__main__":

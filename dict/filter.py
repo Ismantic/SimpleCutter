@@ -89,10 +89,19 @@ def main() -> None:
         print(f"  {filename}: {len(words)} words", file=sys.stderr)
         all_words.update(words)
 
+    # Add constituent single chars from all multi-char words
+    single_chars: set[str] = set()
+    for word in all_words:
+        if len(word) > 1:
+            for ch in word:
+                single_chars.add(ch)
+    new_chars = single_chars - all_words
+    all_words.update(new_chars)
+
     for word in sorted(all_words):
         print(word)
 
-    print(f"total: {len(all_words)} words", file=sys.stderr)
+    print(f"total: {len(all_words)} words ({len(new_chars)} single chars added)", file=sys.stderr)
 
 
 if __name__ == "__main__":
