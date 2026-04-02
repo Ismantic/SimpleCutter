@@ -1,0 +1,12 @@
+*.gz
+*.source
+*.raw
+*.raw.tmp
+*.wikitext
+zhwiki-2*
+zhwiktionary-2*
+zhwikisource-2*
+web-slang-2*
+dict.raw
+zhwiki-redirects.txt
+__pycache__/
