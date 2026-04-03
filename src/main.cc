@@ -4,10 +4,14 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <unordered_map>
+#include <algorithm>
+#include <limits>
 
 #include "count.h"
 #include "cut.h"
 #include "segment.h"
+#include "ustr.h"
 
 std::string join(const std::vector<std::string>& v, const std::string& sep) {
     std::string r;
@@ -87,65 +91,6 @@ void pipe_mode(const std::string& dict_file) {
         auto rs = cutter.Cut(line);
         std::cout << join(rs, " ") << "\n";
     }
-}
-
-// --- tests ---
-int passed = 0;
-int failed = 0;
-
-void check(bool cond, const std::string& name) {
-    if (cond) {
-        passed++;
-    } else {
-        failed++;
-        std::cout << "FAIL: " << name << std::endl;
-    }
-}
-
-void test_basic_cut() {
-    cut::NaiveCutter cutter;
-    cutter.Build({"ab", "cd", "abcd", "ef"}, {5, 5, 100, 5});
-
-    auto rs = cutter.Cut("abcdef");
-    std::string result = join(rs, "/");
-    std::cout << "basic: " << result << std::endl;
-    check(result == "abcd/ef", "basic cut");
-}
-
-void test_chinese_cut() {
-    cut::NaiveCutter cutter;
-    cutter.Build(
-        {"\xe5\x8d\x97\xe4\xba\xac",
-         "\xe5\x8d\x97\xe4\xba\xac\xe5\xb8\x82",
-         "\xe5\xb8\x82\xe9\x95\xbf",
-         "\xe9\x95\xbf\xe6\xb1\x9f",
-         "\xe5\xa4\xa7\xe6\xa1\xa5",
-         "\xe6\xb1\x9f\xe5\xa4\xa7\xe6\xa1\xa5",
-         "\xe9\x95\xbf\xe6\xb1\x9f\xe5\xa4\xa7\xe6\xa1\xa5"},
-        {100, 80, 50, 90, 60, 30, 120});
-
-    auto rs = cutter.Cut(
-        "\xe5\x8d\x97\xe4\xba\xac\xe5\xb8\x82"
-        "\xe9\x95\xbf\xe6\xb1\x9f\xe5\xa4\xa7\xe6\xa1\xa5");
-    std::string result = join(rs, "/");
-    std::cout << "chinese: " << result << std::endl;
-    check(rs.size() >= 2 && rs.size() <= 4, "chinese cut");
-}
-
-void test_no_match() {
-    cut::NaiveCutter cutter;
-    cutter.Build({"ab", "cd"}, {10, 10});
-
-    auto rs = cutter.Cut("xyz");
-    std::cout << "no match: " << join(rs, "/") << std::endl;
-    check(rs.size() == 3, "no match");
-}
-
-void run_tests() {
-    test_basic_cut();
-    test_chinese_cut();
-    test_no_match();
-    std::cout << "\nPassed: " << passed << ", Failed: " << failed << std::endl;
 }
 
 void LoadWords(const std::string& filename, std::vector<std::string>& words) {
@@ -286,6 +231,67 @@ void count_mode(const std::string& dict_file,
     std::cerr << "counted " << words.size() << " words" << std::endl;
 }
 
+void prune_mode(const std::string& dict_file,
+                const std::string& corpus_file,
+                const std::string& output_file) {
+    auto cutter = BuildCutter(dict_file);
+
+    // Collect all words from dict
+    std::vector<std::string> dict_words;
+    std::vector<int> dict_freqs;
+    LoadDict(dict_file, dict_words, dict_freqs);
+    std::set<std::string> dict_set(dict_words.begin(), dict_words.end());
+
+    // Accumulate loss per word over the corpus
+    std::unordered_map<std::string, double> loss;
+    std::ifstream in(corpus_file);
+    if (!in.is_open()) {
+        std::cerr << "cannot open: " << corpus_file << std::endl;
+        return;
+    }
+    std::string line;
+    size_t lines = 0;
+    while (std::getline(in, line)) {
+        if (line.empty()) continue;
+        cutter.CutWithLoss(line, loss);
+        if (++lines % 100000 == 0) {
+            std::cerr << "processed " << lines << " lines" << std::endl;
+        }
+    }
+    std::cerr << "processed " << lines << " lines total" << std::endl;
+
+    // Output: word\tloss, sorted by loss descending
+    struct WordLoss {
+        std::string word;
+        double loss;
+    };
+    std::vector<WordLoss> candidates;
+    candidates.reserve(dict_set.size());
+
+    for (auto& w : dict_set) {
+        double l = 0.0;
+        auto it = loss.find(w);
+        if (it != loss.end()) l = it->second;
+        candidates.push_back({w, l});
+    }
+
+    std::sort(candidates.begin(), candidates.end(),
+              [](const WordLoss& a, const WordLoss& b) {
+                  return a.loss > b.loss;
+              });
+
+    std::ofstream out(output_file);
+    if (!out.is_open()) {
+        std::cerr << "cannot open: " << output_file << std::endl;
+        return;
+    }
+    for (auto& c : candidates) {
+        out << c.word << "\t" << c.loss << "\n";
+    }
+
+    std::cerr << "output " << candidates.size() << " words with loss" << std::endl;
+}
+
 int main(int argc, char* argv[]) {
     // iscut --dict dict.file --segment input.file output.file
     // iscut --count output.file count.file
@@ -302,7 +308,7 @@ int main(int argc, char* argv[]) {
         std::string a = argv[i];
         if (a == "--dict" && i + 1 < argc) {
             dict_file = argv[++i];
-        } else if (a == "--segment" || a == "--cut" || a == "--count" || a == "--pipe") {
+        } else if (a == "--segment" || a == "--cut" || a == "--count" || a == "--pipe" || a == "--prune") {
             mode = a;
         } else {
             args.push_back(a);
@@ -327,6 +333,12 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         count_mode(dict_file, args[0], args[1]);
+    } else if (mode == "--prune") {
+        if (dict_file.empty() || args.size() != 2) {
+            std::cerr << "usage: iscut --dict dict.file --prune corpus.file output.file" << std::endl;
+            return 1;
+        }
+        prune_mode(dict_file, args[0], args[1]);
     } else if (mode == "--pipe") {
         std::string df = dict_file.empty() && args.size() == 1 ? args[0] : dict_file;
         if (df.empty()) {
@@ -339,7 +351,8 @@ int main(int argc, char* argv[]) {
     } else if (!args.empty()) {
         repl(args[0]);
     } else {
-        run_tests();
+        std::cerr << "usage: iscut --dict dict.file [--pipe|--segment|--cut|--count|--prune] ..." << std::endl;
+        return 1;
     }
     return 0;
 }

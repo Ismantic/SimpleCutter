@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <set>
+#include <unordered_map>
 
 #include <stdint.h>
 #include <math.h>
@@ -63,6 +64,9 @@ public:
 
     std::vector<std::string> CutSegment(const std::string& sentence);
     std::vector<std::string> Cut(const std::string& sentence);
+
+    void CutWithLoss(const std::string& sentence,
+                     std::unordered_map<std::string, double>& loss);
 };
 
 } // namespace cut

@@ -98,4 +98,53 @@ std::vector<std::string> NaiveCutter::Cut(const std::string& sentence) {
     return rs;
 }
 
+void NaiveCutter::CutWithLoss(const std::string& sentence,
+                              std::unordered_map<std::string, double>& loss) {
+    auto segments = ustr::SplitByPunct(sentence);
+
+    for (auto& [seg, is_punct] : segments) {
+        if (is_punct) continue;
+
+        auto G = DAG(seg);
+        int n = seg.length();
+
+        const float_t NEG_INF = -std::numeric_limits<float_t>::infinity();
+
+        // DP with best and second-best tracking
+        std::vector<float_t> best(n + 1, NEG_INF);
+        std::vector<int> best_end(n + 1, -1);
+        std::vector<float_t> second(n + 1, NEG_INF);
+
+        best[n] = 1.0;
+        best_end[n] = n;
+
+        for (int i = n - 1; i >= 0; --i) {
+            for (int x : G[i]) {
+                float_t v = GetTrieValue(seg.substr(i, x - i + 1))
+                          + best[x + 1];
+                if (v > best[i]) {
+                    second[i] = best[i];
+                    best[i] = v;
+                    best_end[i] = x;
+                } else if (v > second[i]) {
+                    second[i] = v;
+                }
+            }
+        }
+
+        // Walk optimal path, accumulate loss per word
+        int x = 0;
+        while (x < n) {
+            int y = best_end[x] + 1;
+            if (y <= x) {
+                x += ustr::CharLen(static_cast<uint8_t>(seg[x]));
+            } else {
+                std::string word = seg.substr(x, y - x);
+                loss[word] += best[x] - second[x];
+                x = y;
+            }
+        }
+    }
+}
+
 } // namespace cut

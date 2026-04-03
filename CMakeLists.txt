@@ -8,6 +8,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(iscut src/main.cc src/cut.cc src/segment.cc src/count.cc src/ustr.cc)
 target_include_directories(iscut PRIVATE src)
 
+# Tests
+add_executable(iscut-test src/test.cc src/cut.cc src/ustr.cc)
+target_include_directories(iscut-test PRIVATE src)
+
 # Python module (only when built via scikit-build / pip install)
 if(SKBUILD)
     find_package(pybind11 CONFIG REQUIRED)
