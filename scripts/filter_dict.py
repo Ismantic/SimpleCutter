@@ -34,22 +34,25 @@ def main() -> None:
     kept = 0
     total = 0
 
+    seen: set[str] = set()
     with args.dict_in.open("r", encoding="utf-8") as fin, \
          args.dict_out.open("w", encoding="utf-8") as fout:
         for line in fin:
             word = line.rstrip("\n")
-            if not word:
+            if not word or word in seen:
                 continue
             total += 1
             if all(freq.get(ch, 0) >= args.min_count for ch in word):
                 fout.write(word + "\n")
+                seen.add(word)
                 kept += 1
 
         # Add single chars with freq >= min_count
         added = 0
         for ch, cnt in freq.items():
-            if cnt >= args.min_count and len(ch) == 1 and '\u4e00' <= ch <= '\u9fff':
+            if cnt >= args.min_count and len(ch) == 1 and '\u4e00' <= ch <= '\u9fff' and ch not in seen:
                 fout.write(ch + "\n")
+                seen.add(ch)
                 added += 1
 
     print(f"{kept}/{total} words kept, {added} single chars added (min_count={args.min_count})", file=sys.stderr)

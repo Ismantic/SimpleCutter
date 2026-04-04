@@ -1,6 +1,6 @@
 VOCAB_SIZE = 256000
 SUB_ITERS = 2
-MIN_COUNT = 5
+MIN_COUNT = 10
 CORPUS = ../data/data.txt
 DICT_RAW = ../dict/dict.raw
 ISCUT = ../build/iscut
