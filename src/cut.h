@@ -66,7 +66,8 @@ public:
     std::vector<std::string> Cut(const std::string& sentence);
 
     void CutWithLoss(const std::string& sentence,
-                     std::unordered_map<std::string, double>& loss);
+                     std::unordered_map<std::string, double>& loss,
+                     std::unordered_map<std::string, int>& count);
 };
 
 } // namespace cut
