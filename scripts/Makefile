@@ -19,7 +19,7 @@ chars.cnt: $(OUT)/count_chars $(CORPUS)
 
 # Step 2: filter dict by char frequency
 dict.0: chars.cnt $(DICT_RAW)
-	python3 filter_dict.py chars.cnt $(DICT_RAW) $@
+	python3 filter_dict.py chars.cnt $(DICT_RAW) $@ --min-count $(MIN_COUNT)
 
 # Step 3: EM training + pruning
 em: $(OUT)/dict.txt

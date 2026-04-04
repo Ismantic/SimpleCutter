@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument("char_freq", type=Path, help="char frequency file (char\\tcount)")
     parser.add_argument("dict_in", type=Path, help="input word list (one word per line)")
     parser.add_argument("dict_out", type=Path, help="output filtered word list")
-    parser.add_argument("--min-freq", type=int, default=2, help="minimum char frequency (default: 2)")
+    parser.add_argument("--min-count", type=int, default=2, help="minimum char frequency (default: 2)")
     args = parser.parse_args()
 
     freq = load_char_freq(args.char_freq)
@@ -41,18 +41,18 @@ def main() -> None:
             if not word:
                 continue
             total += 1
-            if all(freq.get(ch, 0) >= args.min_freq for ch in word):
+            if all(freq.get(ch, 0) >= args.min_count for ch in word):
                 fout.write(word + "\n")
                 kept += 1
 
-        # Add single chars with freq >= min_freq
+        # Add single chars with freq >= min_count
         added = 0
         for ch, cnt in freq.items():
-            if cnt >= args.min_freq and len(ch) == 1 and '\u4e00' <= ch <= '\u9fff':
+            if cnt >= args.min_count and len(ch) == 1 and '\u4e00' <= ch <= '\u9fff':
                 fout.write(ch + "\n")
                 added += 1
 
-    print(f"{kept}/{total} words kept, {added} single chars added (min_freq={args.min_freq})", file=sys.stderr)
+    print(f"{kept}/{total} words kept, {added} single chars added (min_count={args.min_count})", file=sys.stderr)
 
 
 if __name__ == "__main__":
