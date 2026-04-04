@@ -33,13 +33,14 @@ while [ "$current_size" -gt "$VOCAB_SIZE" ]; do
     # Prune: compute loss, keep top words
     new_size=$(python3 -c "print(max($VOCAB_SIZE, int($current_size * 75 / 100)))")
     echo "--- Round $round, pruning: $current_size → $new_size ---"
-    "$ISCUT" --dict "$OUT/dict.current" --prune "$CORPUS" "$OUT/prune.txt"
+    "$ISCUT" --dict "$OUT/dict.current" --prune "$CORPUS" "$OUT/prune.${round}.txt"
+    cp "$OUT/dict.current" "$OUT/dict.${round}.txt"
 
     # Re-rank by avg_loss/nchar, take top new_size words
     python3 -c "
 import sys
 items = []
-for line in open('$OUT/prune.txt'):
+for line in open('$OUT/prune.${round}.txt'):
     p = line.strip().split('\t')
     w, l, c = p[0], float(p[1]), int(p[2])
     n = len(w.encode('utf-8')) // 3 if ord(w[0]) > 127 else len(w)
@@ -51,7 +52,7 @@ with open('$OUT/keep.txt', 'w') as f:
         f.write(w + '\n')
 "
     sort "$OUT/keep.txt" -o "$OUT/keep.txt"
-    awk -F'\t' 'NR==FNR{keep[\$1]=1; next} \$1 in keep' \
+    awk -F'\t' 'NR==FNR{keep[$1]=1; next} $1 in keep' \
         "$OUT/keep.txt" "$OUT/dict.current" > "$OUT/dict.pruned"
     mv "$OUT/dict.pruned" "$OUT/dict.current"
 
@@ -69,7 +70,7 @@ for i in $(seq 1 "$SUB_ITERS"); do
 done
 
 # Clean up temp files
-rm -f "$OUT/data.cut" "$OUT/prune.txt" "$OUT/keep.txt"
+rm -f "$OUT/data.cut" "$OUT/keep.txt"
 cp "$OUT/dict.current" "$OUT/dict.txt"
 rm -f "$OUT/dict.current"
 
