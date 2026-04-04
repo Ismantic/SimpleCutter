@@ -32,12 +32,11 @@ while [ "$current_size" -gt "$VOCAB_SIZE" ]; do
     done
 
     # Prune: compute loss, keep top words
-    new_size=$(python3 -c "print(max($VOCAB_SIZE, int($current_size * 75 / 100)))")
-    echo "--- Round $round, pruning: $current_size → $new_size ---"
+    echo "--- Round $round, pruning ---"
     "$ISCUT" --dict "$OUT/dict.current" --prune "$CORPUS" "$OUT/prune.${round}.txt"
     cp "$OUT/dict.current" "$OUT/dict.${round}.txt"
 
-    # Filter by min_count, then rank by avg_loss/nchar, take top new_size words
+    # Filter by min_count, compute target size from eligible count, rank by avg_loss/nchar
     python3 -c "
 import sys
 items = []
@@ -49,9 +48,11 @@ for line in open('$OUT/prune.${round}.txt'):
     n = len(w.encode('utf-8')) // 3 if ord(w[0]) > 127 else len(w)
     score = l / c / max(n, 1) if c > 0 else 0
     items.append((score, w))
+new_size = max($VOCAB_SIZE, int(len(items) * 75 / 100))
+print(f'eligible={len(items)}, new_size={new_size}', file=sys.stderr)
 items.sort(reverse=True)
 with open('$OUT/keep.txt', 'w') as f:
-    for _, w in items[:$new_size]:
+    for _, w in items[:new_size]:
         f.write(w + '\n')
 "
     sort "$OUT/keep.txt" -o "$OUT/keep.txt"
