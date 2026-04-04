@@ -56,8 +56,8 @@ done
 
 # Clean up temp files
 rm -f "$OUT/data.cut" "$OUT/prune.txt" "$OUT/keep.txt"
-cp "$OUT/dict.current" "$OUT/dict.final"
+cp "$OUT/dict.current" "$OUT/dict.txt"
 rm -f "$OUT/dict.current"
 
-final_size=$(wc -l < "$OUT/dict.final")
-echo "=== Done. Final dict: $OUT/dict.final ($final_size words) ==="
+final_size=$(wc -l < "$OUT/dict.txt")
+echo "=== Done. Final dict: $OUT/dict.txt ($final_size words) ==="

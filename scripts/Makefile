@@ -1,4 +1,5 @@
-ROUNDS = 8
+VOCAB_SIZE = 256000
+SUB_ITERS = 2
 CORPUS = ../data/data.txt
 DICT_RAW = ../dict/dict.raw
 ISCUT = ../build/iscut
@@ -19,14 +20,14 @@ chars.cnt: $(OUT)/count_chars $(CORPUS)
 dict.0: chars.cnt $(DICT_RAW)
 	python3 filter_dict.py chars.cnt $(DICT_RAW) $@
 
-# Step 3: EM training
-em: $(OUT)/dict.$(ROUNDS)
-$(OUT)/dict.$(ROUNDS): dict.0 $(CORPUS) $(ISCUT)
-	./run_em.sh dict.0 $(CORPUS) $(OUT) $(ROUNDS)
+# Step 3: EM training + pruning
+em: $(OUT)/dict.txt
+$(OUT)/dict.txt: dict.0 $(CORPUS) $(ISCUT)
+	./run_em.sh dict.0 $(CORPUS) $(OUT) $(VOCAB_SIZE) $(SUB_ITERS)
 
 # Step 4: replace dict
 replace: ../dict.txt
-../dict.txt: $(OUT)/dict.$(ROUNDS)
+../dict.txt: $(OUT)/dict.txt
 	cp $< $@
 	@echo "=== Installed dict.txt ==="
 
