@@ -35,9 +35,23 @@ while [ "$current_size" -gt "$VOCAB_SIZE" ]; do
     echo "--- Round $round, pruning: $current_size → $new_size ---"
     "$ISCUT" --dict "$OUT/dict.current" --prune "$CORPUS" "$OUT/prune.txt"
 
-    # Take top new_size words by loss, join with current dict to get frequencies
-    head -n "$new_size" "$OUT/prune.txt" | cut -f1 | sort > "$OUT/keep.txt"
-    awk -F'\t' 'NR==FNR{keep[$1]=1; next} $1 in keep' \
+    # Re-rank by avg_loss/nchar, take top new_size words
+    python3 -c "
+import sys
+items = []
+for line in open('$OUT/prune.txt'):
+    p = line.strip().split('\t')
+    w, l, c = p[0], float(p[1]), int(p[2])
+    n = len(w.encode('utf-8')) // 3 if ord(w[0]) > 127 else len(w)
+    score = l / c / max(n, 1) if c > 0 else 0
+    items.append((score, w))
+items.sort(reverse=True)
+with open('$OUT/keep.txt', 'w') as f:
+    for _, w in items[:$new_size]:
+        f.write(w + '\n')
+"
+    sort "$OUT/keep.txt" -o "$OUT/keep.txt"
+    awk -F'\t' 'NR==FNR{keep[\$1]=1; next} \$1 in keep' \
         "$OUT/keep.txt" "$OUT/dict.current" > "$OUT/dict.pruned"
     mv "$OUT/dict.pruned" "$OUT/dict.current"
 
