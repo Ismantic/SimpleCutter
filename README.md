@@ -88,13 +88,13 @@ make process    # 繁简转换，合并为 data.txt
 uv pip install datasets huggingface_hub[cli] opencc
 ```
 
-### 3. 训练词频（EM）
+### 3. 训练词频（EM + 剪枝）
 
 ```bash
 cd scripts
 make count_chars   # 统计语料字频 → chars.cnt
 make dict.0        # 用字频过滤词表 → dict.0
-make em            # EM 迭代训练 8 轮 → output/dict.8
+make em            # EM 训练 + 剪枝 → output/dict.txt
 make replace       # 替换 dict.txt
 ```
 
@@ -105,7 +105,19 @@ cd scripts
 make
 ```
 
-EM 流程：`dict.0` → 冷启动最长匹配 → `dict.1` → DP 分词 → `dict.2` → ... → `dict.8`
+可通过参数控制词表大小和 EM 迭代次数：
+
+```bash
+make VOCAB_SIZE=100000 SUB_ITERS=3
+```
+
+训练流程类似 SentencePiece Unigram：
+
+1. **冷启动**：用初始词表做最长匹配分词，统计词频
+2. **EM + 剪枝循环**（词表大小 > 目标时重复）：
+   - EM 子迭代：DAG+DP 分词 → 统计词频 → 更新词表（默认 2 轮）
+   - 剪枝：计算每个词的全局 loss（删除后似然损失），保留 top 75%
+3. **最终 EM**：在剪枝后的词表上再跑一轮 EM 收敛词频
 
 ## 项目结构
 
