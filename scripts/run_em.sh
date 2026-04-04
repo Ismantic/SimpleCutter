@@ -1,11 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-DICT=${1:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2]}
-CORPUS=${2:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2]}
-OUT=${3:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2]}
-VOCAB_SIZE=${4:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2]}
+DICT=${1:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5]}
+CORPUS=${2:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5]}
+OUT=${3:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5]}
+VOCAB_SIZE=${4:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5]}
 SUB_ITERS=${5:-2}
+MIN_COUNT=${6:-5}
 
 ISCUT="$(dirname "$0")/../build/iscut"
 mkdir -p "$OUT"
@@ -36,13 +37,15 @@ while [ "$current_size" -gt "$VOCAB_SIZE" ]; do
     "$ISCUT" --dict "$OUT/dict.current" --prune "$CORPUS" "$OUT/prune.${round}.txt"
     cp "$OUT/dict.current" "$OUT/dict.${round}.txt"
 
-    # Re-rank by avg_loss/nchar, take top new_size words
+    # Filter by min_count, then rank by avg_loss/nchar, take top new_size words
     python3 -c "
 import sys
 items = []
 for line in open('$OUT/prune.${round}.txt'):
     p = line.strip().split('\t')
     w, l, c = p[0], float(p[1]), int(p[2])
+    if c < $MIN_COUNT:
+        continue
     n = len(w.encode('utf-8')) // 3 if ord(w[0]) > 127 else len(w)
     score = l / c / max(n, 1) if c > 0 else 0
     items.append((score, w))

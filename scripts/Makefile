@@ -1,5 +1,6 @@
 VOCAB_SIZE = 256000
 SUB_ITERS = 2
+MIN_COUNT = 5
 CORPUS = ../data/data.txt
 DICT_RAW = ../dict/dict.raw
 ISCUT = ../build/iscut
@@ -23,7 +24,7 @@ dict.0: chars.cnt $(DICT_RAW)
 # Step 3: EM training + pruning
 em: $(OUT)/dict.txt
 $(OUT)/dict.txt: dict.0 $(CORPUS) $(ISCUT)
-	./run_em.sh dict.0 $(CORPUS) $(OUT) $(VOCAB_SIZE) $(SUB_ITERS)
+	./run_em.sh dict.0 $(CORPUS) $(OUT) $(VOCAB_SIZE) $(SUB_ITERS) $(MIN_COUNT)
 
 # Step 4: replace dict
 replace: ../dict.txt
