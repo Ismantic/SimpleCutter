@@ -99,50 +99,55 @@ std::vector<std::string> NaiveCutter::Cut(const std::string& sentence) {
 }
 
 void NaiveCutter::CutWithLoss(const std::string& sentence,
-                              std::unordered_map<std::string, double>& loss) {
+                              std::unordered_map<std::string, double>& loss,
+                              std::unordered_map<std::string, int>& count) {
     auto segments = ustr::SplitByPunct(sentence);
 
     for (auto& [seg, is_punct] : segments) {
         if (is_punct) continue;
 
         auto G = DAG(seg);
-        int n = seg.length();
+        auto R = Compute(seg, G);
+        float_t best_score = R[0].first;
 
-        const float_t NEG_INF = -std::numeric_limits<float_t>::infinity();
-
-        // DP with best and second-best tracking
-        std::vector<float_t> best(n + 1, NEG_INF);
-        std::vector<int> best_end(n + 1, -1);
-        std::vector<float_t> second(n + 1, NEG_INF);
-
-        best[n] = 1.0;
-        best_end[n] = n;
-
-        for (int i = n - 1; i >= 0; --i) {
-            for (int x : G[i]) {
-                float_t v = GetTrieValue(seg.substr(i, x - i + 1))
-                          + best[x + 1];
-                if (v > best[i]) {
-                    second[i] = best[i];
-                    best[i] = v;
-                    best_end[i] = x;
-                } else if (v > second[i]) {
-                    second[i] = v;
-                }
-            }
-        }
-
-        // Walk optimal path, accumulate loss per word
+        // Walk optimal path, collect words
+        struct Word { int start; int end; std::string text; };
+        std::vector<Word> path;
         int x = 0;
+        int n = seg.length();
         while (x < n) {
-            int y = best_end[x] + 1;
+            int y = R[x].second + 1;
             if (y <= x) {
                 x += ustr::CharLen(static_cast<uint8_t>(seg[x]));
             } else {
-                std::string word = seg.substr(x, y - x);
-                loss[word] += best[x] - second[x];
+                path.push_back({x, R[x].second, seg.substr(x, y - x)});
                 x = y;
             }
+        }
+
+        // For each word on the optimal path, remove its edge and re-run DP
+        for (auto& w : path) {
+            int charlen = ustr::CharLen(static_cast<uint8_t>(seg[w.start]));
+            if (w.end - w.start + 1 == charlen) {
+                // Single character: edge is also the fallback, can't remove.
+                // Loss = score(known) - score(unknown)
+                float_t known = GetTrieValue(w.text);
+                float_t unknown = log(1.0 / static_cast<float_t>(sum_));
+                loss[w.text] += known - unknown;
+                count[w.text]++;
+                continue;
+            }
+
+            // Temporarily remove the edge
+            G[w.start].erase(w.end);
+
+            auto R2 = Compute(seg, G);
+            float_t alt_score = R2[0].first;
+            loss[w.text] += best_score - alt_score;
+            count[w.text]++;
+
+            // Restore the edge
+            G[w.start].insert(w.end);
         }
     }
 }

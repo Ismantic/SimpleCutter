@@ -242,8 +242,9 @@ void prune_mode(const std::string& dict_file,
     LoadDict(dict_file, dict_words, dict_freqs);
     std::set<std::string> dict_set(dict_words.begin(), dict_words.end());
 
-    // Accumulate loss per word over the corpus
+    // Accumulate loss and count per word over the corpus
     std::unordered_map<std::string, double> loss;
+    std::unordered_map<std::string, int> count;
     std::ifstream in(corpus_file);
     if (!in.is_open()) {
         std::cerr << "cannot open: " << corpus_file << std::endl;
@@ -253,26 +254,30 @@ void prune_mode(const std::string& dict_file,
     size_t lines = 0;
     while (std::getline(in, line)) {
         if (line.empty()) continue;
-        cutter.CutWithLoss(line, loss);
+        cutter.CutWithLoss(line, loss, count);
         if (++lines % 100000 == 0) {
             std::cerr << "processed " << lines << " lines" << std::endl;
         }
     }
     std::cerr << "processed " << lines << " lines total" << std::endl;
 
-    // Output: word\tloss, sorted by loss descending
+    // Output: word\tloss\tcount, sorted by loss descending
     struct WordLoss {
         std::string word;
         double loss;
+        int count;
     };
     std::vector<WordLoss> candidates;
     candidates.reserve(dict_set.size());
 
     for (auto& w : dict_set) {
         double l = 0.0;
+        int c = 0;
         auto it = loss.find(w);
         if (it != loss.end()) l = it->second;
-        candidates.push_back({w, l});
+        auto it2 = count.find(w);
+        if (it2 != count.end()) c = it2->second;
+        candidates.push_back({w, l, c});
     }
 
     std::sort(candidates.begin(), candidates.end(),
@@ -286,7 +291,7 @@ void prune_mode(const std::string& dict_file,
         return;
     }
     for (auto& c : candidates) {
-        out << c.word << "\t" << c.loss << "\n";
+        out << c.word << "\t" << c.loss << "\t" << c.count << "\n";
     }
 
     std::cerr << "output " << candidates.size() << " words with loss" << std::endl;
