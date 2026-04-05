@@ -1,3 +1,6 @@
+# Data
+data.txt
+
 # Build outputs
 build/
 *.o
