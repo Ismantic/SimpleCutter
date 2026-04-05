@@ -63,15 +63,22 @@ inline std::vector<std::pair<std::string, bool>> SplitByPunct(const std::string&
         if (i + len > n) len = 1;
         bool is_punct = IsPunct(s.substr(i, len));
 
-        if (is_punct != seg_is_punct) {
-            result.emplace_back(s.substr(seg_start, i - seg_start), seg_is_punct);
+        if (is_punct) {
+            // Each punctuation character is its own segment
+            if (seg_start < i && !seg_is_punct) {
+                result.emplace_back(s.substr(seg_start, i - seg_start), false);
+            }
+            result.emplace_back(s.substr(i, len), true);
+            seg_start = i + len;
+            seg_is_punct = true;
+        } else if (seg_is_punct) {
             seg_start = i;
-            seg_is_punct = is_punct;
+            seg_is_punct = false;
         }
         i += len;
     }
-    if (seg_start < n) {
-        result.emplace_back(s.substr(seg_start, n - seg_start), seg_is_punct);
+    if (seg_start < n && !seg_is_punct) {
+        result.emplace_back(s.substr(seg_start, n - seg_start), false);
     }
     return result;
 }
