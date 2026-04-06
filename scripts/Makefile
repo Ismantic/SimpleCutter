@@ -1,7 +1,7 @@
-VOCAB_SIZE = 256000
+VOCAB_SIZE = 120000
 SUB_ITERS = 2
-MIN_COUNT = 15
-CORPUS = ../data/data.txt
+MIN_COUNT = 20
+CORPUS = ../data/sentences.txt
 DICT_RAW = ../dict/dict.raw
 ISCUT = ../build/iscut
 OUT = output
