@@ -1,24 +1,103 @@
 #!/bin/bash
 set -euo pipefail
 
-DICT=${1:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5]}
-CORPUS=${2:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5]}
-OUT=${3:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5]}
-VOCAB_SIZE=${4:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5]}
+DICT=${1:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5] [nproc=auto]}
+CORPUS=${2:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5] [nproc=auto]}
+OUT=${3:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5] [nproc=auto]}
+VOCAB_SIZE=${4:?usage: run_em.sh <dict_file> <corpus_file> <output_dir> <vocab_size> [sub_iters=2] [min_count=5] [nproc=auto]}
 SUB_ITERS=${5:-2}
 MIN_COUNT=${6:-5}
+NPROC=${7:-$(nproc)}
 
 ISCUT="$(dirname "$0")/../build/iscut"
 mkdir -p "$OUT"
 
+# Clean up background processes on exit
+trap 'kill $(jobs -p) 2>/dev/null; wait 2>/dev/null' EXIT
+
+# ---------------------------------------------------------------------------
+# Split corpus into NPROC chunks (once, reused across all rounds)
+# ---------------------------------------------------------------------------
+CHUNKS_DIR="$OUT/chunks"
+rm -rf "$CHUNKS_DIR"
+mkdir -p "$CHUNKS_DIR"
+echo "=== Splitting corpus into $NPROC chunks ==="
+split -n "l/$NPROC" "$CORPUS" "$CHUNKS_DIR/part."
+CHUNKS=("$CHUNKS_DIR"/part.*)
+echo "Split into ${#CHUNKS[@]} chunks"
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+# parallel_segment <dict> — longest-match segment each chunk, output chunk.cut files
+parallel_segment() {
+    local dict=$1
+    local pids=()
+    for chunk in "${CHUNKS[@]}"; do
+        "$ISCUT" --dict "$dict" --segment "$chunk" "$chunk.cut" &
+        pids+=($!)
+    done
+    for pid in "${pids[@]}"; do wait "$pid"; done
+}
+
+# parallel_cut <dict> — DAG+DP cut each chunk, output chunk.cut files
+parallel_cut() {
+    local dict=$1
+    local pids=()
+    for chunk in "${CHUNKS[@]}"; do
+        "$ISCUT" --dict "$dict" --cut "$chunk" "$chunk.cut" &
+        pids+=($!)
+    done
+    for pid in "${pids[@]}"; do wait "$pid"; done
+}
+
+# parallel_count <dict> — count each chunk.cut, then merge frequencies
+# Output: $OUT/dict.counted
+parallel_count() {
+    local dict=$1
+    local pids=()
+    for chunk in "${CHUNKS[@]}"; do
+        "$ISCUT" --dict "$dict" --count "$chunk.cut" "$chunk.cnt" &
+        pids+=($!)
+    done
+    for pid in "${pids[@]}"; do wait "$pid"; done
+
+    # Merge: sum frequencies per word, output sorted by word
+    awk -F'\t' '{freq[$1]+=$2} END{for(w in freq) print w"\t"freq[w]}' \
+        "${CHUNKS[@]/%/.cnt}" | sort -t$'\t' -k1,1 > "$OUT/dict.counted"
+}
+
+# parallel_prune <dict> <output> — prune each chunk, then merge loss+count
+parallel_prune() {
+    local dict=$1
+    local output=$2
+    local pids=()
+    for chunk in "${CHUNKS[@]}"; do
+        "$ISCUT" --dict "$dict" --prune "$chunk" "$chunk.prune" &
+        pids+=($!)
+    done
+    for pid in "${pids[@]}"; do wait "$pid"; done
+
+    # Merge: sum loss and count per word
+    awk -F'\t' '{loss[$1]+=$2; cnt[$1]+=$3} END{for(w in loss) print w"\t"loss[w]"\t"cnt[w]}' \
+        "${CHUNKS[@]/%/.prune}" | sort -t$'\t' -k2,2 -g -r > "$output"
+}
+
+# ---------------------------------------------------------------------------
 # Cold start: longest match → count → initial dict
+# ---------------------------------------------------------------------------
 echo "=== Cold start ==="
-"$ISCUT" --dict "$DICT" --segment "$CORPUS" "$OUT/data.cut"
-"$ISCUT" --dict "$DICT" --count "$OUT/data.cut" "$OUT/dict.current"
+parallel_segment "$DICT"
+parallel_count "$DICT"
+mv "$OUT/dict.counted" "$OUT/dict.current"
 
 current_size=$(wc -l < "$OUT/dict.current")
 echo "Initial vocab: $current_size, target: $VOCAB_SIZE"
 
+# ---------------------------------------------------------------------------
+# EM + prune loop
+# ---------------------------------------------------------------------------
 round=0
 while [ "$current_size" -gt "$VOCAB_SIZE" ]; do
     round=$((round + 1))
@@ -26,14 +105,14 @@ while [ "$current_size" -gt "$VOCAB_SIZE" ]; do
     # EM sub-iterations: cut → count → update dict
     for i in $(seq 1 "$SUB_ITERS"); do
         echo "--- Round $round, EM iter $i ---"
-        "$ISCUT" --dict "$OUT/dict.current" --cut "$CORPUS" "$OUT/data.cut"
-        "$ISCUT" --dict "$OUT/dict.current" --count "$OUT/data.cut" "$OUT/dict.new"
-        mv "$OUT/dict.new" "$OUT/dict.current"
+        parallel_cut "$OUT/dict.current"
+        parallel_count "$OUT/dict.current"
+        mv "$OUT/dict.counted" "$OUT/dict.current"
     done
 
     # Prune: compute loss, keep top words
     echo "--- Round $round, pruning ---"
-    "$ISCUT" --dict "$OUT/dict.current" --prune "$CORPUS" "$OUT/prune.${round}.txt"
+    parallel_prune "$OUT/dict.current" "$OUT/prune.${round}.txt"
     cp "$OUT/dict.current" "$OUT/dict.${round}.txt"
 
     # Filter by min_count, compute target size from eligible count, rank by avg_loss/nchar
@@ -64,17 +143,19 @@ with open('$OUT/keep.txt', 'w') as f:
     echo "--- Round $round done, vocab: $current_size ---"
 done
 
+# ---------------------------------------------------------------------------
 # Final EM to converge with pruned vocab
+# ---------------------------------------------------------------------------
 echo "=== Final EM ==="
 for i in $(seq 1 "$SUB_ITERS"); do
     echo "--- Final EM iter $i ---"
-    "$ISCUT" --dict "$OUT/dict.current" --cut "$CORPUS" "$OUT/data.cut"
-    "$ISCUT" --dict "$OUT/dict.current" --count "$OUT/data.cut" "$OUT/dict.new"
-    mv "$OUT/dict.new" "$OUT/dict.current"
+    parallel_cut "$OUT/dict.current"
+    parallel_count "$OUT/dict.current"
+    mv "$OUT/dict.counted" "$OUT/dict.current"
 done
 
-# Clean up temp files
-rm -f "$OUT/data.cut" "$OUT/keep.txt"
+# Clean up
+rm -rf "$CHUNKS_DIR" "$OUT/keep.txt"
 cp "$OUT/dict.current" "$OUT/dict.txt"
 rm -f "$OUT/dict.current"
 
