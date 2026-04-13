@@ -1,3 +1,3 @@
-from iscut._iscut import Cutter
+from iscut._iscut import Cutter, SemanticCutter
 
-__all__ = ["Cutter"]
+__all__ = ["Cutter", "SemanticCutter"]
