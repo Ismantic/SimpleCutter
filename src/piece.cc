@@ -222,13 +222,51 @@ PieceTokenizer::EncodeResult PieceTokenizer::Encode(
     return result;
 }
 
+// Check if a string is valid UTF-8.
+static bool IsValidUTF8(const std::string& s) {
+    size_t i = 0;
+    while (i < s.size()) {
+        auto c = static_cast<unsigned char>(s[i]);
+        int len = 1;
+        if ((c & 0x80) == 0) len = 1;
+        else if ((c & 0xE0) == 0xC0) len = 2;
+        else if ((c & 0xF0) == 0xE0) len = 3;
+        else if ((c & 0xF8) == 0xF0) len = 4;
+        else return false;
+        if (i + len > s.size()) return false;
+        for (int j = 1; j < len; ++j) {
+            if ((static_cast<unsigned char>(s[i + j]) & 0xC0) != 0x80)
+                return false;
+        }
+        i += len;
+    }
+    return true;
+}
+
 std::vector<std::string> PieceTokenizer::Tokenize(
     std::string_view text) const {
     auto encoded = Encode(text);
+    // Merge adjacent tokens that form incomplete UTF-8 sequences.
     std::vector<std::string> tokens;
     tokens.reserve(encoded.size());
+    std::string buf;
     for (auto& [piece, id] : encoded) {
-        tokens.push_back(std::move(piece));
+        if (buf.empty()) {
+            if (IsValidUTF8(piece)) {
+                tokens.push_back(std::move(piece));
+            } else {
+                buf = std::move(piece);
+            }
+        } else {
+            buf += piece;
+            if (IsValidUTF8(buf)) {
+                tokens.push_back(std::move(buf));
+                buf.clear();
+            }
+        }
+    }
+    if (!buf.empty()) {
+        tokens.push_back(std::move(buf));
     }
     return tokens;
 }
