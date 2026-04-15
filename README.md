@@ -117,7 +117,7 @@ make VOCAB_SIZE=100000 SUB_ITERS=3
 
 ## MixCutter（中英混合切分）
 
-MixCutter 在 Cutter 基础上支持中英混合文本切分：
+通过引入 PieceTokenizer，MixCutter 在 Cutter 基础上支持中英混合文本切分：
 
 - 第一层：按 Han/non-Han 分割（CJK 标点归入 Han）
 - `--cn`：Han 段用 Cutter（DAG+DP）分词，关闭则拆成单字
