@@ -5,12 +5,11 @@
 ## 特性
 
 - **DAG + 动态规划分词** — 前缀搜索构建 DAG，后向 DP 求最大概率路径
-- **标点预切分** — 先按标点符号切分，再对每段做分词
+- **SemanticCutter** — 中英混合文本分流切分：中文走 Unigram 分词，英文走 BPE 分词
 - **EM 词频自举** — 给定词典和生语料，无需标注数据即可学出词频
 - **冷启动分词** — 正向最长匹配，用于 EM 的初始化
 - **Double-Array Trie** — XOR 索引，支持精确查找和公共前缀搜索
 - **完整可复现** — 从数据获取到词表训练全流程自动化
-- **纯 C++17** — 无外部依赖，< 1000 行
 
 ## 使用
 
@@ -21,21 +20,36 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
-### 交互模式
+### SemanticCutter（中英混合切分）
 
 ```bash
+# 交互模式：cn=中文分词，en=英文BPE分词
+./build/iscut --dict dict.txt --piece-model piece.txt --semantic --cn --en
+```
+
+```
+> 南京市长江大桥and Natural Language Processing技术
+南京市/长江/大桥/and/Natural/Language/Processing/技术
+```
+
+切分规则：
+- 第一层：按 Han/non-Han 分割（CJK 标点归入 Han）
+- `--cn`：Han 段用 NaiveCutter（DAG+DP）分词，关闭则拆成单字
+- `--en`：non-Han 段先做 GPT-4 风格预分割，再用 PieceTokenizer（BPE）分词，关闭则拆成单字
+
+### NaiveCutter（纯中文分词）
+
+```bash
+# 交互模式
 ./build/iscut --dict dict.txt
+
+# Pipe 模式
+./build/iscut --dict dict.txt --pipe < input.txt > output.txt
 ```
 
 ```
 > 南京市长江大桥
 南京市/长江/大桥
-```
-
-### Pipe 模式
-
-```bash
-./build/iscut --dict dict.txt --pipe < input.txt > output.txt
 ```
 
 ### Python
@@ -47,9 +61,13 @@ uv pip install .
 ```python
 import iscut
 
+# SemanticCutter：中英混合
+sc = iscut.SemanticCutter("dict.txt", "piece.txt")
+sc.cut("Hello世界", cn=True, en=True)  # ['Hell', 'o', '世界']
+
+# Cutter：纯中文
 cutter = iscut.Cutter("dict.txt")
-result = cutter.cut("南京市长江大桥")
-print(result)  # ['南京市', '长江', '大桥']
+cutter.cut("南京市长江大桥")  # ['南京市', '长江', '大桥']
 ```
 
 ## 训练过程
@@ -123,10 +141,19 @@ make VOCAB_SIZE=100000 SUB_ITERS=3
 
 ```
 src/           - C++ 分词器核心
+  trie.h       - Double-Array Trie（XOR 索引，前缀搜索）
+  cut.h/cc     - NaiveCutter（DAG+DP）和 SemanticCutter（中英分流）
+  piece.h/cc   - PieceTokenizer（BPE 分词，sentencepiece 格式）
+  segment.h/cc - 正向最长匹配（EM 冷启动用）
+  ustr.h/cc    - UTF-8 工具：SplitByHan、SplitByPunct、SplitNonHan
+  count.h/cc   - 词频统计
+  main.cc      - CLI 入口
+  pip.cc       - pybind11 Python 绑定
 dict/          - 维基词表获取与转换
 data/          - 语料下载与处理
 scripts/       - 训练流程（字频统计、词表过滤、EM）
-dict.txt  - 当前默认词频词典
+dict.txt       - 当前默认词频词典
+piece.txt      - BPE piece 模型
 ```
 
 ## License
