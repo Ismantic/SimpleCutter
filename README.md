@@ -29,13 +29,16 @@ cmake --build build
 
 ```
 > 南京市长江大桥and Natural Language Processing技术
-南京市/长江/大桥/and/Natural/Language/Processing/技术
+南京市/长江/大桥/and/▁Natural/▁Language/▁Pro/cess/ing/技术
+
+> I love Python3.14
+I/▁love/▁Py/th/on/3/./14
 ```
 
 切分规则：
 - 第一层：按 Han/non-Han 分割（CJK 标点归入 Han）
 - `--cn`：Han 段用 NaiveCutter（DAG+DP）分词，关闭则拆成单字
-- `--en`：non-Han 段先做 GPT-4 风格预分割，再用 PieceTokenizer（BPE）分词，关闭则拆成单字
+- `--en`：non-Han 段经 PieceTokenizer 处理（Normalize → GPT-4 风格预分割 → BPE），关闭则拆成单字
 
 ### NaiveCutter（纯中文分词）
 
@@ -63,7 +66,7 @@ import iscut
 
 # SemanticCutter：中英混合
 sc = iscut.SemanticCutter("dict.txt", "piece.txt")
-sc.cut("Hello世界", cn=True, en=True)  # ['Hell', 'o', '世界']
+sc.cut("Hello世界", cn=True, en=True)  # ['H', 'ello', '世界']
 
 # Cutter：纯中文
 cutter = iscut.Cutter("dict.txt")
@@ -143,9 +146,9 @@ make VOCAB_SIZE=100000 SUB_ITERS=3
 src/           - C++ 分词器核心
   trie.h       - Double-Array Trie（XOR 索引，前缀搜索）
   cut.h/cc     - NaiveCutter（DAG+DP）和 SemanticCutter（中英分流）
-  piece.h/cc   - PieceTokenizer（BPE 分词，sentencepiece 格式）
+  piece.h/cc   - PieceTokenizer（Normalize → SplitText → BPE）
   segment.h/cc - 正向最长匹配（EM 冷启动用）
-  ustr.h/cc    - UTF-8 工具：SplitByHan、SplitByPunct、SplitNonHan
+  ustr.h/cc    - UTF-8 工具：SplitByHan、SplitByPunct
   count.h/cc   - 词频统计
   main.cc      - CLI 入口
   pip.cc       - pybind11 Python 绑定
