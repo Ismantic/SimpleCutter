@@ -136,6 +136,7 @@ MixCutter 在 Cutter 基础上支持中英混合文本切分：
 > I love Python3.14
 I/▁love/▁Py/th/on/3/./14
 ```
+### Python
 
 ```python
 sc = iscut.MixCutter("dict.txt", "piece.txt")
