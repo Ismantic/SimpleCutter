@@ -54,28 +54,6 @@ inline bool IsHan(std::string_view ch) {
            (cp >= 0x30000 && cp <= 0x3134F);
 }
 
-// Returns true if the character is punctuation but not a space.
-inline bool IsPunctNoSpace(const std::string& ch) {
-    if (ch.size() == 1) {
-        unsigned char c = ch[0];
-        return c <= 0x7F && c != ' ' &&
-               !((c >= '0' && c <= '9') ||
-                 (c >= 'A' && c <= 'Z') ||
-                 (c >= 'a' && c <= 'z'));
-    }
-    if (ch.size() == 3) {
-        const unsigned char* p = reinterpret_cast<const unsigned char*>(ch.data());
-        int cp = ((p[0] & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F);
-        if (cp >= 0x3000 && cp <= 0x303F) return true;
-        if (cp >= 0xFF01 && cp <= 0xFF0F) return true;
-        if (cp >= 0xFF1A && cp <= 0xFF20) return true;
-        if (cp >= 0xFF3B && cp <= 0xFF40) return true;
-        if (cp >= 0xFF5B && cp <= 0xFF65) return true;
-        if (cp >= 0x2000 && cp <= 0x206F) return true;
-    }
-    return false;
-}
-
 // Returns true if the UTF-8 character is a punctuation or whitespace delimiter.
 inline bool IsPunct(const std::string& ch) {
     if (ch.size() == 1) {
@@ -102,40 +80,28 @@ inline bool IsPunct(const std::string& ch) {
 }
 
 // Split a string into segments by punctuation/whitespace delimiters.
-// Returns pairs of (substring, is_punct).
+// Each punctuation char is its own segment (marked true).
+// Consecutive non-punct chars are merged into one segment (marked false).
 inline std::vector<std::pair<std::string, bool>> SplitByPunct(const std::string& s) {
     std::vector<std::pair<std::string, bool>> result;
-    int n = static_cast<int>(s.size());
+    const int n = static_cast<int>(s.size());
     int i = 0;
     int seg_start = 0;
-    bool seg_is_punct = false;
-
-    if (n == 0) return result;
-
-    // Determine type of first char
-    int first_len = CharLen(static_cast<uint8_t>(s[0]));
-    seg_is_punct = IsPunct(s.substr(0, first_len));
 
     while (i < n) {
         int len = CharLen(static_cast<uint8_t>(s[i]));
         if (i + len > n) len = 1;
-        bool is_punct = IsPunct(s.substr(i, len));
 
-        if (is_punct) {
-            // Each punctuation character is its own segment
-            if (seg_start < i && !seg_is_punct) {
+        if (IsPunct(s.substr(i, len))) {
+            if (seg_start < i) {
                 result.emplace_back(s.substr(seg_start, i - seg_start), false);
             }
             result.emplace_back(s.substr(i, len), true);
             seg_start = i + len;
-            seg_is_punct = true;
-        } else if (seg_is_punct) {
-            seg_start = i;
-            seg_is_punct = false;
         }
         i += len;
     }
-    if (seg_start < n && !seg_is_punct) {
+    if (seg_start < n) {
         result.emplace_back(s.substr(seg_start, n - seg_start), false);
     }
     return result;
@@ -153,8 +119,8 @@ inline CharType GetCharType(const std::string& ch) {
         if (c == ' ' || c == '\t') return CharType::kSpace;
         return CharType::kPunct;
     }
-    // Multi-byte: check if it's punctuation
-    if (IsPunctNoSpace(ch)) return CharType::kPunct;
+    // Multi-byte: check if it's punctuation (space already handled above)
+    if (IsPunct(ch)) return CharType::kPunct;
     return CharType::kAlpha;  // Other multi-byte (e.g. accented letters)
 }
 
