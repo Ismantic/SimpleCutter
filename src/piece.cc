@@ -274,6 +274,8 @@ bool PieceTokenizer::Load(const std::string& path) {
         } else if (section == NORMALIZER) {
             if (line.compare(0, 6, "space=") == 0)
                 space_ = line.substr(6);
+            else if (line.compare(0, 13, "reconstruct=") == 0)
+                reconstruct_ = std::stoi(line.substr(13)) != 0;
         } else if (section == PIECES) {
             if (line.compare(0, 5, "size=") == 0) {
                 expected_size = std::stoi(line.substr(5));
@@ -343,14 +345,27 @@ bool PieceTokenizer::Load(const std::string& path) {
     return true;
 }
 
-std::string PieceTokenizer::Normalize(std::string_view text) const {
-    // Skip leading spaces, replace spaces with space symbol (▁),
-    // collapse consecutive spaces, trim trailing space symbol.
+std::string PieceTokenizer::Normalize(std::string_view text,
+                                      bool reconstruct) const {
     std::string out;
     out.reserve(text.size());
+
+    if (reconstruct) {
+        // Preserve all spaces: every space → ▁, no skipping or collapsing.
+        for (size_t i = 0; i < text.size(); ++i) {
+            if (text[i] == ' ') {
+                out.append(space_);
+            } else {
+                out.push_back(text[i]);
+            }
+        }
+        return out;
+    }
+
+    // Default: skip leading spaces, collapse consecutive, trim trailing ▁.
     size_t start = 0;
     while (start < text.size() && text[start] == ' ') ++start;
-    bool prev_space = true; // suppress leading ▁ on first space
+    bool prev_space = true;
     for (size_t i = start; i < text.size(); ++i) {
         if (text[i] == ' ') {
             if (!prev_space) {
@@ -362,7 +377,6 @@ std::string PieceTokenizer::Normalize(std::string_view text) const {
             prev_space = false;
         }
     }
-    // Trim trailing space symbol
     if (out.size() >= space_.size() &&
         out.compare(out.size() - space_.size(), space_.size(), space_) == 0) {
         out.resize(out.size() - space_.size());
@@ -491,9 +505,9 @@ std::vector<std::string> PieceTokenizer::TokenizeChunk(
 }
 
 std::vector<std::string> PieceTokenizer::Tokenize(
-    std::string_view text) const {
+    std::string_view text, bool space) const {
     // Normalize → SplitText → BPE each chunk.
-    std::string normalized = Normalize(text);
+    std::string normalized = Normalize(text, space);
     auto chunks = SplitText(normalized, space_);
 
     std::vector<std::string> tokens;

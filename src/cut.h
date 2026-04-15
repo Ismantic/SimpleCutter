@@ -80,8 +80,10 @@ public:
 
     // cn: use Cutter (Unigram) for Han runs
     // en: use PieceTokenizer for non-Han runs (requires LoadPiece)
+    // space: preserve all spaces in non-Han runs (reconstruct mode)
     std::vector<std::string> Cut(const std::string& sentence,
-                                 bool cn = false, bool en = false);
+                                 bool cn = false, bool en = false,
+                                 bool space = false);
 
 private:
     Cutter cutter_;

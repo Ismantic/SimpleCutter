@@ -26,7 +26,9 @@ public:
     EncodeResult Encode(std::string_view text) const;
 
     // Encode text into piece strings.
-    std::vector<std::string> Tokenize(std::string_view text) const;
+    // space=true: preserve all spaces (reconstruct mode).
+    std::vector<std::string> Tokenize(std::string_view text,
+                                      bool space = false) const;
 
     // Encode text into token IDs.
     std::vector<int> EncodeIds(std::string_view text) const;
@@ -60,7 +62,7 @@ private:
         PieceType type = NORMAL;
     };
 
-    std::string Normalize(std::string_view text) const;
+    std::string Normalize(std::string_view text, bool reconstruct = false) const;
     std::string Denormalize(std::string_view text) const;
     std::vector<int> BuildInitialTokenIds(const std::string& text) const;
     void GreedyMerge(std::vector<int>& ids) const;
@@ -75,6 +77,7 @@ private:
     int eos_id_ = 2;
     std::string space_ = "\xe2\x96\x81"; // ▁
     std::string normalizer_name_ = "identity";
+    bool reconstruct_ = false;
     bool ready_ = false;
 };
 
