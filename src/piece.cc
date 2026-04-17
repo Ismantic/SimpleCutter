@@ -296,6 +296,8 @@ bool PieceTokenizer::Load(const std::string& path) {
         } else if (section == NORMALIZER) {
             if (line.compare(0, 6, "space=") == 0)
                 space_ = line.substr(6);
+            else if (line.compare(0, 4, "cut=") == 0)
+                cut_ = std::stoi(line.substr(4));
             else if (line.compare(0, 13, "reconstruct=") == 0)
                 reconstruct_ = std::stoi(line.substr(13)) != 0;
         } else if (section == PIECES) {
@@ -529,6 +531,7 @@ std::vector<std::string> PieceTokenizer::TokenizeChunk(
 std::vector<std::string> PieceTokenizer::Tokenize(
     std::string_view text, bool space, int cut) const {
     // Normalize → SplitText → BPE each chunk.
+    if (cut < 0) cut = cut_;
     std::string normalized = Normalize(text, space);
     auto chunks = SplitText(normalized, space_, cut);
 
@@ -536,6 +539,18 @@ std::vector<std::string> PieceTokenizer::Tokenize(
     for (auto chunk : chunks) {
         auto chunk_tokens = TokenizeChunk(chunk);
         tokens.insert(tokens.end(), chunk_tokens.begin(), chunk_tokens.end());
+    }
+    return tokens;
+}
+
+std::vector<std::string> PieceTokenizer::PreTokenize(
+    std::string_view text, bool space, int cut) const {
+    if (cut < 0) cut = cut_;
+    std::string normalized = Normalize(text, space);
+    auto chunks = SplitText(normalized, space_, cut);
+    std::vector<std::string> tokens;
+    for (auto chunk : chunks) {
+        tokens.emplace_back(chunk);
     }
     return tokens;
 }

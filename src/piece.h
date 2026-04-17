@@ -29,7 +29,12 @@ public:
     // space=true: preserve all spaces (reconstruct mode).
     std::vector<std::string> Tokenize(std::string_view text,
                                       bool space = false,
-                                      int cut = 0) const;
+                                      int cut = -1) const;
+
+    // Pre-tokenize only (Normalize → SplitText, no BPE).
+    std::vector<std::string> PreTokenize(std::string_view text,
+                                         bool space = false,
+                                         int cut = -1) const;
 
     // Encode text into token IDs.
     std::vector<int> EncodeIds(std::string_view text) const;
@@ -77,7 +82,8 @@ private:
     int bos_id_ = 1;
     int eos_id_ = 2;
     std::string space_ = "\xe2\x96\x81"; // ▁
-    std::string normalizer_name_ = "identity";
+    std::string normalizer_name_ = "no";
+    int cut_ = 1;
     bool reconstruct_ = false;
     bool ready_ = false;
 };
