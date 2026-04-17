@@ -13,8 +13,8 @@ Iscut (Is Semantic Cutter / 是语切词) is a Chinese word segmentation tool. I
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 
-# Run tests (no CMake target yet — compile manually)
-cmake --build build && g++ -std=c++17 -Isrc src/test.cc src/cut.cc src/ustr.cc -o build/iscut-test && ./build/iscut-test
+# Run tests (no CMake target — compile manually; needs piece.cc for MixCutter symbols)
+cmake --build build && g++ -std=c++17 -Isrc src/test.cc src/cut.cc src/ustr.cc src/piece.cc -o build/iscut-test && ./build/iscut-test
 
 # Install Python package (requires pybind11)
 uv pip install .
@@ -24,6 +24,9 @@ uv pip install .
 
 # Pipe mode (stdin → stdout)
 ./build/iscut --dict dict.txt --pipe < input.txt > output.txt
+
+# MixCutter mode (Chinese + English)
+./build/iscut --dict dict.txt --piece-model piece.txt --semantic --cn --en
 ```
 
 ## Training Pipeline
@@ -43,11 +46,11 @@ Training requires: `datasets`, `huggingface_hub[cli]`, `opencc` Python packages.
 - **`trie.h`** — `trie::DoubleArray<T>`: XOR-indexed double-array trie. Requires sorted input. Supports exact lookup (`GetUnit`) and common prefix search (`PrefixSearch`). Header-only.
 - **`cut.h/cc`** — `cut::Cutter`: the main segmenter. Builds DAG via trie prefix search, runs backward DP to find max log-probability path. `CutWithLoss` computes per-word deletion loss for pruning.
 - **`segment.h/cc`** — `cut::Segmenter`: forward longest-match segmenter (no frequencies). Used for EM cold start.
-- **`ustr.h/cc`** — UTF-8 utilities: char length, punctuation detection, `SplitByPunct` for pre-segmentation.
+- **`ustr.h/cc`** — UTF-8 utilities: char length, punctuation detection, `SplitByPunct` for pre-segmentation, `SplitByHan` for Han/non-Han splitting.
 - **`count.h/cc`** — `cut::Counter`: word frequency accumulator.
 - **`piece.h/cc`** — `cut::PieceTokenizer`: BPE tokenizer for non-Chinese text (English). Loads a `piece.txt` vocab, applies Unicode normalization and BPE merge rules.
-- **`main.cc`** — CLI with modes: `--pipe`, `--segment`, `--cut`, `--count`, `--prune`, or REPL.
-- **`pip.cc`** — pybind11 wrapper exposing `Cutter` and `MixCutter` to Python.
+- **`main.cc`** — CLI with modes: `--pipe`, `--segment`, `--cut`, `--count`, `--prune`, `--piece`, `--semantic`, or REPL.
+- **`pip.cc`** — pybind11 wrapper exposing `Cutter` and `MixCutter` to Python (built via scikit-build-core when `SKBUILD` is set).
 
 ### MixCutter (mixed-language segmentation)
 
@@ -63,6 +66,7 @@ Training requires: `datasets`, `huggingface_hub[cli]`, `opencc` Python packages.
 ### Key design patterns
 
 - **Punctuation pre-splitting**: `Cut()` first splits input by punctuation via `SplitByPunct`, then segments each non-punct span independently, preserving punctuation in output.
+- **Han detection scope**: `IsHan` covers CJK unified ideographs, CJK symbols/punctuation, fullwidth forms, and extension blocks. CJK punctuation (U+3000–U+303F) is classified as both Han and punctuation — `SplitByPunct` runs first so punctuation is stripped before `SplitByHan` sees it.
 - **Dictionary format**: TSV with `word\tfrequency`. Single-character entries are included (they serve as fallback for unknown words).
 - **EM loop** (`scripts/run_em.sh`): cold start (longest match) → iterative cut/count → prune by per-word loss normalized by character count → final EM convergence.
 
