@@ -25,16 +25,6 @@ void check(bool cond, const std::string& name) {
     }
 }
 
-void test_basic_cut() {
-    cut::Cutter cutter;
-    cutter.Build({"ab", "cd", "abcd", "ef"}, {5, 5, 100, 5});
-
-    auto rs = cutter.Cut("abcdef");
-    std::string result = join(rs, "/");
-    std::cout << "basic: " << result << std::endl;
-    check(result == "abcd/ef", "basic cut");
-}
-
 void test_chinese_cut() {
     cut::Cutter cutter;
     cutter.Build(
@@ -55,32 +45,42 @@ void test_chinese_cut() {
     check(rs.size() >= 2 && rs.size() <= 4, "chinese cut");
 }
 
-void test_no_match() {
+void test_no_dict() {
     cut::Cutter cutter;
-    cutter.Build({"ab", "cd"}, {10, 10});
-
-    auto rs = cutter.Cut("xyz");
-    std::cout << "no match: " << join(rs, "/") << std::endl;
-    check(rs.size() == 3, "no match");
+    // No Build() — Han should be split into individual characters
+    auto rs = cutter.Cut("你好世界");
+    std::string result = join(rs, "/");
+    std::cout << "no dict: " << result << std::endl;
+    check(result == "你/好/世/界", "no dict");
 }
 
-void test_han_only_cut() {
+void test_mixed_cut() {
     cut::Cutter cutter;
     cutter.Build(
         {"他", "是", "英国", "英国人", "人"},
         {50, 40, 80, 100, 30});
 
-    auto rs = cutter.Cut("他是英国人Tom", true);
+    auto rs = cutter.Cut("他是英国人Tom");
     std::string result = join(rs, "/");
-    std::cout << "han_only: " << result << std::endl;
-    check(result == "他/是/英国人/Tom", "han-only cut");
+    std::cout << "mixed: " << result << std::endl;
+    check(result == "他/是/英国人/Tom", "mixed cut");
+}
+
+void test_punct() {
+    cut::Cutter cutter;
+    cutter.Build({"你好", "世界"}, {50, 50});
+
+    auto rs = cutter.Cut("你好，世界！");
+    std::string result = join(rs, "/");
+    std::cout << "punct: " << result << std::endl;
+    check(result == "你好/，/世界/！", "punct cut");
 }
 
 int main() {
-    test_basic_cut();
     test_chinese_cut();
-    test_no_match();
-    test_han_only_cut();
+    test_no_dict();
+    test_mixed_cut();
+    test_punct();
     std::cout << "\nPassed: " << passed << ", Failed: " << failed << std::endl;
     return failed > 0 ? 1 : 0;
 }

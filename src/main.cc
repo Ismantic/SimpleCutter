@@ -10,7 +10,6 @@
 
 #include "count.h"
 #include "cut.h"
-#include "piece.h"
 #include "segment.h"
 #include "ustr.h"
 
@@ -232,24 +231,6 @@ void count_mode(const std::string& dict_file,
     std::cerr << "counted " << words.size() << " words" << std::endl;
 }
 
-void piece_mode(const std::string& model_file) {
-    piece::PieceTokenizer tok;
-    if (!tok.Load(model_file)) {
-        std::cerr << "cannot load piece model: " << model_file << std::endl;
-        return;
-    }
-    std::cerr << "loaded " << tok.VocabSize() << " pieces" << std::endl;
-
-    std::cout << "> ";
-    std::string line;
-    while (std::getline(std::cin, line)) {
-        if (line.empty() || line == "q" || line == "quit") break;
-        auto tokens = tok.Tokenize(line);
-        std::cout << join(tokens, "/") << std::endl;
-        std::cout << "> ";
-    }
-}
-
 void prune_mode(const std::string& dict_file,
                 const std::string& corpus_file,
                 const std::string& output_file) {
@@ -319,67 +300,21 @@ void prune_mode(const std::string& dict_file,
 int main(int argc, char* argv[]) {
     std::string mode;
     std::string dict_file;
-    std::string piece_file;
-    bool cn = false;
-    bool en = false;
     std::vector<std::string> args;
 
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
         if (a == "--dict" && i + 1 < argc) {
             dict_file = argv[++i];
-        } else if (a == "--piece-model" && i + 1 < argc) {
-            piece_file = argv[++i];
-        } else if (a == "--cn") {
-            cn = true;
-        } else if (a == "--en") {
-            en = true;
         } else if (a == "--segment" || a == "--cut" || a == "--count" ||
-                   a == "--pipe" || a == "--prune" || a == "--piece" ||
-                   a == "--semantic") {
+                   a == "--pipe" || a == "--prune") {
             mode = a;
         } else {
             args.push_back(a);
         }
     }
 
-    if (mode == "--semantic") {
-        cut::MixCutter sc;
-        if (!dict_file.empty()) {
-            std::vector<std::string> words;
-            std::vector<int> freqs;
-            LoadDict(dict_file, words, freqs);
-            sc.Build(words, freqs);
-            std::cerr << "dict loaded: " << words.size() << " words" << std::endl;
-        }
-
-        if (!piece_file.empty()) {
-            if (!sc.LoadPiece(piece_file)) {
-                std::cerr << "cannot load piece model: " << piece_file << std::endl;
-                return 1;
-            }
-            std::cerr << "piece model loaded" << std::endl;
-        }
-
-        if (cn && dict_file.empty()) {
-            std::cerr << "warning: --cn requires --dict" << std::endl;
-        }
-        if (en && piece_file.empty()) {
-            std::cerr << "warning: --en requires --piece-model" << std::endl;
-        }
-
-        std::cout << "> ";
-        std::string line;
-        while (std::getline(std::cin, line)) {
-            if (line.empty() || line == "q" || line == "quit") break;
-            auto rs = sc.Cut(line, cn, en);
-            std::cout << join(rs, "/") << std::endl;
-            std::cout << "> ";
-        }
-    } else if (mode == "--piece") {
-        std::string model = args.empty() ? "piece.txt" : args[0];
-        piece_mode(model);
-    } else if (mode == "--segment") {
+    if (mode == "--segment") {
         if (dict_file.empty() || args.size() != 2) {
             std::cerr << "usage: iscut --dict dict.file --segment input.file output.file" << std::endl;
             return 1;

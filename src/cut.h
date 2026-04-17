@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "piece.h"
 #include "trie.h"
 
 namespace cut {
@@ -19,7 +18,7 @@ using float_i = std::pair<float_t, int>;
 class Cutter {
 private:
     trie::DoubleArray<int> da_;
-    uint64_t sum_;
+    uint64_t sum_ = 0;
 
     float_t GetTrieValue(const std::string& value) {
         auto r = da_.GetUnit(value);
@@ -58,36 +57,19 @@ public:
         da_.Build(sorted_words, sorted_freqs);
     }
 
+    bool HasDict() const { return !da_.Empty(); }
+
     std::vector<std::set<int>> DAG(const std::string& sentence);
 
     std::vector<float_i> Compute(const std::string& sentence,
                                  const std::vector<std::set<int>>& G);
 
     std::vector<std::string> CutSegment(const std::string& sentence);
-    std::vector<std::string> Cut(const std::string& sentence,
-                                bool han_only = false);
+    std::vector<std::string> Cut(const std::string& sentence);
 
     void CutWithLoss(const std::string& sentence,
                      std::unordered_map<std::string, double>& loss,
                      std::unordered_map<std::string, int>& count);
-};
-
-class MixCutter {
-public:
-    void Build(const std::vector<std::string>& words,
-               const std::vector<int>& freqs);
-
-    bool LoadPiece(const std::string& path);
-
-    // cn: use Cutter (Unigram) for Han runs
-    // en: use PieceTokenizer for non-Han runs (requires LoadPiece)
-    // space: preserve all spaces in non-Han runs (reconstruct mode)
-    std::vector<std::string> Cut(const std::string& sentence,
-                                 bool cn = false, bool en = false);
-
-private:
-    Cutter cutter_;
-    piece::PieceTokenizer piece_;
 };
 
 } // namespace cut
