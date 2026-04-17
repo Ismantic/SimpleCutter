@@ -51,7 +51,14 @@ Training requires: `datasets`, `huggingface_hub[cli]`, `opencc` Python packages.
 
 ### MixCutter (mixed-language segmentation)
 
-`cut::MixCutter` handles text containing both Chinese and non-Chinese. It uses `SplitByHan` to separate Han/non-Han runs, then applies `Cutter` (DAG+DP) for Chinese spans and `PieceTokenizer` (BPE) for non-Chinese spans. Exposed to Python as `iscut.MixCutter(dict_path, piece_path)`.
+`cut::MixCutter` handles text containing both Chinese and non-Chinese. `Cut(sentence, cn, en)` splits by Han/non-Han via `SplitByHan`, then:
+
+- **Han + `cn=true`**: Cutter (DAG+DP) segmentation
+- **Han + `cn=false`**: split into individual characters
+- **non-Han + `en=true`**: `PieceTokenizer::Tokenize` (uses piece.txt settings for cut/reconstruct, then BPE)
+- **non-Han + `en=false`**: `PieceTokenizer::PreTokenize` (SplitText with cut=1, no BPE)
+
+`PieceTokenizer` is self-contained — `Tokenize()` uses settings from piece.txt (`cut`, `reconstruct`), no external override. `PreTokenize(text, cut=1)` is a separate entry point for SplitText-only use.
 
 ### Key design patterns
 

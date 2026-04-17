@@ -121,7 +121,7 @@ make VOCAB_SIZE=100000 SUB_ITERS=3
 
 - 第一层：按 Han/non-Han 分割（CJK 标点归入 Han）
 - `--cn`：Han 段用 Cutter（DAG+DP）分词，关闭则拆成单字
-- `--en`：non-Han 段经 PieceTokenizer 处理（Normalize → GPT-4 风格预分割 → BPE），关闭则拆成单字
+- `--en`：non-Han 段经 PieceTokenizer 处理（Normalize → SplitText → BPE，使用 piece.txt 中的设置），关闭则走 PreTokenize（SplitText cut=1，只做预分割不做 BPE）
 
 其中 `piece.txt` BPE 模型来自 [PieceTokenizer](https://github.com/Ismantic/PieceTokenizer)。
 
@@ -142,7 +142,7 @@ I/▁love/▁Py/th/on/3/./14
 import iscut
 
 sc = iscut.MixCutter("dict.txt", "piece.txt")
-sc.cut("Hello世界", cn=True, en=True)  # ['H', 'ello', '世界']
+sc.cut("Hello世界", cn=True, en=True)  # ['Hello', '世界']
 ```
 
 ## 项目结构
