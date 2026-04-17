@@ -56,8 +56,8 @@ public:
         }
     }
 
-    std::vector<std::string> cut(const std::string& sentence, bool cn, bool en, bool space) {
-        return cutter_.Cut(sentence, cn, en, space);
+    std::vector<std::string> cut(const std::string& sentence, bool cn, bool en, bool space, int cut) {
+        return cutter_.Cut(sentence, cn, en, space, cut);
     }
 
 private:
@@ -76,5 +76,5 @@ PYBIND11_MODULE(_iscut, m) {
              py::arg("dict_path"), py::arg("piece_path") = "")
         .def("cut", &PyMixCutter::cut,
              py::arg("sentence"), py::arg("cn") = false, py::arg("en") = false,
-             py::arg("space") = false);
+             py::arg("space") = false, py::arg("cut") = 1);
 }

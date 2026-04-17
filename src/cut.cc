@@ -176,7 +176,7 @@ static std::vector<std::string> SplitChars(const std::string& s) {
 
 std::vector<std::string> MixCutter::Cut(const std::string& sentence,
                                               bool cn, bool en,
-                                              bool space) {
+                                              bool space, int cut) {
     // Split by Han/non-Han so each run gets appropriate treatment.
     auto runs = ustr::SplitByHan(sentence);
     std::vector<std::string> rs;
@@ -186,7 +186,7 @@ std::vector<std::string> MixCutter::Cut(const std::string& sentence,
             auto words = cutter_.Cut(run);
             rs.insert(rs.end(), words.begin(), words.end());
         } else if (!is_han && en && piece_.Ready()) {
-            auto tokens = piece_.Tokenize(run, space);
+            auto tokens = piece_.Tokenize(run, space, cut);
             rs.insert(rs.end(), tokens.begin(), tokens.end());
         } else {
             auto chars = SplitChars(run);

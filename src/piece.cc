@@ -88,28 +88,50 @@ static std::vector<std::string_view> SplitText(std::string_view text,
     if (begin >= end) return result;
 
     // cut=1: spaces and punctuation each become independent tokens.
+    // Letters, digits, and Han also form separate runs (same as cut=0).
     if (cut == 1) {
+        enum Kind1 { kSpace1, kLetter1, kDigit1, kHan1, kPunct1 };
+        auto classify1 = [&](const char* p, int len) -> Kind1 {
+            std::string_view c(p, len);
+            if (c == space) return kSpace1;
+            uint32_t cp = DecodeCP(p, end);
+            if (IsHanCP(cp)) return kHan1;
+            if (IsDigitCP(cp)) return kDigit1;
+            if (IsWordChar(cp)) return kLetter1;
+            return kPunct1;
+        };
+        auto char_len1 = [&](const char* p) -> int {
+            return std::min<int>(ustr::CharLen(static_cast<uint8_t>(*p)), end - p);
+        };
+
         const char* p = begin;
         while (p < end) {
-            const int clen = std::min<int>(
-                ustr::CharLen(static_cast<uint8_t>(*p)), end - p);
-            std::string_view ch(p, clen);
+            const int clen = char_len1(p);
+            const Kind1 kind = classify1(p, clen);
 
-            if (ch == space) {
-                result.emplace_back(p, clen);
-                p += clen;
-            } else if (IsPunctuationToken(p, end)) {
+            if (kind == kSpace1 || kind == kPunct1) {
+                // Space and punctuation → each standalone token.
                 result.emplace_back(p, clen);
                 p += clen;
             } else {
+                // Letter/Digit/Han → consume same-kind run.
+                // For letter runs: apostrophe between letters is not a break
+                // (keeps contractions like don't, they'll intact).
                 const char* run_start = p;
                 p += clen;
                 while (p < end) {
-                    const int wlen = std::min<int>(
-                        ustr::CharLen(static_cast<uint8_t>(*p)), end - p);
-                    std::string_view wch(p, wlen);
-                    if (wch == space || IsPunctuationToken(p, end)) break;
-                    p += wlen;
+                    const int wlen = char_len1(p);
+                    Kind1 wkind = classify1(p, wlen);
+                    if (wkind == kind) { p += wlen; continue; }
+                    // Apostrophe inside letter run: peek ahead.
+                    if (kind == kLetter1 && *p == '\'' && p + 1 < end) {
+                        const int nlen = char_len1(p + 1);
+                        if (classify1(p + 1, nlen) == kLetter1) {
+                            p += 1 + nlen;  // consume ' + next letter
+                            continue;
+                        }
+                    }
+                    break;
                 }
                 result.emplace_back(run_start, p - run_start);
             }
@@ -505,10 +527,10 @@ std::vector<std::string> PieceTokenizer::TokenizeChunk(
 }
 
 std::vector<std::string> PieceTokenizer::Tokenize(
-    std::string_view text, bool space) const {
+    std::string_view text, bool space, int cut) const {
     // Normalize → SplitText → BPE each chunk.
     std::string normalized = Normalize(text, space);
-    auto chunks = SplitText(normalized, space_);
+    auto chunks = SplitText(normalized, space_, cut);
 
     std::vector<std::string> tokens;
     for (auto chunk : chunks) {

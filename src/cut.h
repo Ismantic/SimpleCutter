@@ -83,7 +83,7 @@ public:
     // space: preserve all spaces in non-Han runs (reconstruct mode)
     std::vector<std::string> Cut(const std::string& sentence,
                                  bool cn = false, bool en = false,
-                                 bool space = false);
+                                 bool space = false, int cut = 1);
 
 private:
     Cutter cutter_;

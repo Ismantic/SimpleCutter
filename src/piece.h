@@ -28,7 +28,8 @@ public:
     // Encode text into piece strings.
     // space=true: preserve all spaces (reconstruct mode).
     std::vector<std::string> Tokenize(std::string_view text,
-                                      bool space = false) const;
+                                      bool space = false,
+                                      int cut = 0) const;
 
     // Encode text into token IDs.
     std::vector<int> EncodeIds(std::string_view text) const;
