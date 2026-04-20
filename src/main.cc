@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <set>
+#include <unordered_set>
 #include <vector>
 #include <string>
 #include <chrono>
@@ -181,10 +182,11 @@ void count_mode(const std::string& dict_file,
                 const std::string& input_file,
                 const std::string& output_file) {
     // Load dictionary whitelist if provided
-    std::set<std::string> whitelist;
+    std::unordered_set<std::string> whitelist;
     if (!dict_file.empty()) {
         std::vector<std::string> dict_words;
         LoadWords(dict_file, dict_words);
+        whitelist.reserve(dict_words.size() * 2);
         whitelist.insert(dict_words.begin(), dict_words.end());
         std::cerr << "dict filter: " << whitelist.size() << " words" << std::endl;
     }

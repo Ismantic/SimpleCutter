@@ -3,8 +3,8 @@ SUB_ITERS = 2
 MIN_COUNT = 15
 #NPROC = $(shell nproc)
 NPROC = 8
-CORPUS = sentences.txt
-DICT_RAW = dict.raw
+CORPUS = ../data/sentences.txt
+DICT_RAW = ../dict/dict.raw
 ISCUT = ../build/iscut
 OUT = output
 
