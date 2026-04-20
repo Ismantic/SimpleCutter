@@ -8,12 +8,20 @@
 
 namespace {
 
-int CharLen(uint8_t c) {
+int CharLen(const uint8_t* p, size_t remaining) {
+    if (remaining == 0) return 1;
+    uint8_t c = p[0];
+    int len;
     if ((c & 0x80) == 0) return 1;
-    if ((c & 0xE0) == 0xC0) return 2;
-    if ((c & 0xF0) == 0xE0) return 3;
-    if ((c & 0xF8) == 0xF0) return 4;
-    return 1;
+    else if ((c & 0xE0) == 0xC0) len = 2;
+    else if ((c & 0xF0) == 0xE0) len = 3;
+    else if ((c & 0xF8) == 0xF0) len = 4;
+    else return 1;
+    if (static_cast<size_t>(len) > remaining) return 1;
+    for (int i = 1; i < len; ++i) {
+        if ((p[i] & 0xC0) != 0x80) return 1;
+    }
+    return len;
 }
 
 bool IsChineseChar(const std::string& s) {
@@ -63,9 +71,9 @@ int main(int argc, char* argv[]) {
     std::unordered_map<std::string, uint64_t> counts;
     std::string line;
     while (std::getline(in, line)) {
+        const uint8_t* base = reinterpret_cast<const uint8_t*>(line.data());
         for (size_t i = 0; i < line.size();) {
-            int len = CharLen(static_cast<uint8_t>(line[i]));
-            if (i + len > line.size()) len = 1;
+            int len = CharLen(base + i, line.size() - i);
             std::string ch = line.substr(i, len);
             if (IsChineseChar(ch)) {
                 ++counts[ch];
