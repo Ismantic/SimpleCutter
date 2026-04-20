@@ -47,10 +47,10 @@ def main() -> None:
                 seen.add(word)
                 kept += 1
 
-        # Add single chars with freq >= min_count
+        # Add all CJK single chars seen in corpus (no min_count filter)
         added = 0
         for ch, cnt in freq.items():
-            if cnt >= args.min_count and len(ch) == 1 and '\u4e00' <= ch <= '\u9fff' and ch not in seen:
+            if len(ch) == 1 and '\u4e00' <= ch <= '\u9fff' and ch not in seen:
                 fout.write(ch + "\n")
                 seen.add(ch)
                 added += 1

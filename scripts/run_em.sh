@@ -116,27 +116,43 @@ while [ "$current_size" -gt "$VOCAB_SIZE" ]; do
     cp "$OUT/dict.current" "$OUT/dict.${round}.txt"
 
     # Filter by min_count, compute target size from eligible count, rank by avg_loss/nchar
+    # Single characters are always kept to ensure full character coverage.
+    # We collect singles from dict.current (not prune.txt) so that chars
+    # fully covered by multi-char words in this round are not lost.
     python3 -c "
 import sys
+singles = set()
+for line in open('$OUT/dict.current'):
+    w = line.strip().split('\t')[0]
+    n = len(w.encode('utf-8')) // 3 if ord(w[0]) > 127 else len(w)
+    if n == 1:
+        singles.add(w)
 items = []
 for line in open('$OUT/prune.${round}.txt'):
     p = line.strip().split('\t')
     w, l, c = p[0], float(p[1]), int(p[2])
+    if w in singles:
+        continue
     if c < $MIN_COUNT:
         continue
     n = len(w.encode('utf-8')) // 3 if ord(w[0]) > 127 else len(w)
     score = l / c / max(n, 1) if c > 0 else 0
     items.append((score, w))
-new_size = max($VOCAB_SIZE, int(len(items) * 75 / 100))
-print(f'eligible={len(items)}, new_size={new_size}', file=sys.stderr)
+new_size = max($VOCAB_SIZE - len(singles), int(len(items) * 75 / 100))
+print(f'singles={len(singles)}, eligible={len(items)}, new_size={new_size + len(singles)}', file=sys.stderr)
 items.sort(reverse=True)
 with open('$OUT/keep.txt', 'w') as f:
+    for w in sorted(singles):
+        f.write(w + '\n')
     for _, w in items[:new_size]:
         f.write(w + '\n')
 "
     sort "$OUT/keep.txt" -o "$OUT/keep.txt"
     awk -F'\t' 'NR==FNR{keep[$1]=1; next} $1 in keep' \
         "$OUT/keep.txt" "$OUT/dict.current" > "$OUT/dict.pruned"
+    # Ensure all single chars from keep.txt are present (freq 0 if unseen)
+    awk -F'\t' 'NR==FNR{seen[$1]=1; next} !($1 in seen){print $1"\t0"}' \
+        "$OUT/dict.pruned" "$OUT/keep.txt" >> "$OUT/dict.pruned"
     mv "$OUT/dict.pruned" "$OUT/dict.current"
 
     current_size=$(wc -l < "$OUT/dict.current")

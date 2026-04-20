@@ -44,13 +44,14 @@ Training requires: `datasets`, `huggingface_hub[cli]`, `opencc` Python packages.
 ### Core C++ (`src/`)
 
 - **`trie.h`** — `trie::DoubleArray<T>`: XOR-indexed double-array trie. Requires sorted input. Supports exact lookup (`GetUnit`) and common prefix search (`PrefixSearch`). Header-only.
-- **`cut.h/cc`** — `cut::Cutter`: the main segmenter. Builds DAG via trie prefix search, runs backward DP to find max log-probability path. `CutWithLoss` computes per-word deletion loss for pruning.
+- **`cut.h/cc`** — `cut::Cutter`: the main segmenter. Builds DAG via trie prefix search, runs backward DP to find max log-probability path. `CutWithLoss` computes per-word deletion loss for pruning. Also defines `cut::MixCutter`.
 - **`segment.h/cc`** — `cut::Segmenter`: forward longest-match segmenter (no frequencies). Used for EM cold start.
 - **`ustr.h/cc`** — UTF-8 utilities: char length, punctuation detection, `SplitByPunct` for pre-segmentation, `SplitByHan` for Han/non-Han splitting.
 - **`count.h/cc`** — `cut::Counter`: word frequency accumulator.
 - **`piece.h/cc`** — `cut::PieceTokenizer`: BPE tokenizer for non-Chinese text (English). Loads a `piece.txt` vocab, applies Unicode normalization and BPE merge rules.
 - **`main.cc`** — CLI with modes: `--pipe`, `--segment`, `--cut`, `--count`, `--prune`, `--piece`, `--semantic`, or REPL.
 - **`pip.cc`** — pybind11 wrapper exposing `Cutter` and `MixCutter` to Python (built via scikit-build-core when `SKBUILD` is set).
+- **`test.cc`** — Smoke tests. Not wired into CMake; compile manually (see Build & Run).
 
 ### MixCutter (mixed-language segmentation)
 
@@ -69,6 +70,17 @@ Training requires: `datasets`, `huggingface_hub[cli]`, `opencc` Python packages.
 - **Han detection scope**: `IsHan` covers CJK unified ideographs, CJK symbols/punctuation, fullwidth forms, and extension blocks. CJK punctuation (U+3000–U+303F) is classified as both Han and punctuation — `SplitByPunct` runs first so punctuation is stripped before `SplitByHan` sees it.
 - **Dictionary format**: TSV with `word\tfrequency`. Single-character entries are included (they serve as fallback for unknown words).
 - **EM loop** (`scripts/run_em.sh`): cold start (longest match) → iterative cut/count → prune by per-word loss normalized by character count → final EM convergence.
+
+## Coding Style
+
+- C++17, standard library only — no external dependencies for the core.
+- 4-space indentation in C++ and Python.
+- `PascalCase` for classes and public methods (`BuildCutter`, `Cutter`, `Cut`, `SplitByPunct`), `snake_case` for Python functions, scripts, and Make targets (`filter_dict.py`, `count_chars`).
+- Prefer small translation units and file-local helpers over heavy abstractions.
+
+## Commit Style
+
+Short, imperative subjects. Make them specific enough to identify the touched area, e.g. `scripts: tighten dict filter`. Include sample CLI output when segmentation behavior changes.
 
 ## Dict files at root
 
